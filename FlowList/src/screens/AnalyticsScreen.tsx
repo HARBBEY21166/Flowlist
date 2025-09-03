@@ -1,26 +1,46 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import MoodHistory from '../components/MoodHistory';
 
 const AnalyticsScreen: React.FC = () => {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Analytics Screen - Coming Soon!</Text>
-      <Text>Productivity insights and charts will be here</Text>
-    </View>
+    <ScrollView style={styles.container}>
+      <Text style={styles.header}>Productivity Analytics</Text>
+      <MoodHistory />
+      
+      {/* We'll add more analytics components here later */}
+      <View style={styles.comingSoon}>
+        <Text style={styles.comingSoonText}>More analytics coming soon!</Text>
+        <Text>Task completion rates, productivity trends, and more...</Text>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     backgroundColor: '#f5f5f5',
   },
-  text: {
-    fontSize: 20,
+  header: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    textAlign: 'center',
+    marginVertical: 16,
+    color: '#333',
+  },
+  comingSoon: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    margin: 16,
+    alignItems: 'center',
+  },
+  comingSoonText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#4361ee',
   },
 });
 

@@ -8,8 +8,9 @@ import {
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
 import { PRIORITIES } from '../utils/constants';
-import { Task } from '../types';
+import { Task, Mood } from '../types';
 import { Ionicons } from '@expo/vector-icons';
+import MoodSelector from './MoodSelector';
 
 interface TaskItemProps {
   task: Task;
@@ -18,9 +19,25 @@ interface TaskItemProps {
 const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const { updateTask, deleteTask } = useData();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showMoodSelector, setShowMoodSelector] = useState(false);
 
   const handleComplete = async (): Promise<void> => {
-    await updateTask(task.id, { completed: true, completedAt: Date.now() });
+    // For completed tasks, show mood selector
+    if (!task.completed) {
+      setShowMoodSelector(true);
+    } else {
+      // If already completed, just update without mood
+      await updateTask(task.id, { completed: false, completedAt: null, mood: null });
+    }
+  };
+
+  const handleMoodSelect = async (mood: Mood): Promise<void> => {
+    await updateTask(task.id, { 
+      completed: true, 
+      completedAt: Date.now(), 
+      mood: mood.emoji 
+    });
+    setShowMoodSelector(false);
   };
 
   const handleDelete = (): void => {
@@ -37,39 +54,63 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const priority = PRIORITIES[task.priority.toUpperCase() as keyof typeof PRIORITIES];
 
   return (
-    <TouchableOpacity 
-      style={styles.container}
-      onPress={() => setIsExpanded(!isExpanded)}
-      activeOpacity={0.7}
-    >
-      <View style={styles.content}>
-        <View style={[styles.priorityIndicator, { backgroundColor: priority.color }]} />
-        
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{task.title}</Text>
-          {isExpanded && task.description ? (
-            <Text style={styles.description}>{task.description}</Text>
-          ) : null}
-          {isExpanded && (
-            <View style={styles.metaContainer}>
-              <Text style={styles.category}>{task.category}</Text>
-              <Text style={[styles.priority, { color: priority.color }]}>
-                {priority.label}
-              </Text>
-            </View>
-          )}
+    <>
+      <TouchableOpacity 
+        style={styles.container}
+        onPress={() => setIsExpanded(!isExpanded)}
+        activeOpacity={0.7}
+      >
+        <View style={styles.content}>
+          <View style={[styles.priorityIndicator, { backgroundColor: priority.color }]} />
+          
+          <View style={styles.textContainer}>
+            <Text style={[styles.title, task.completed && styles.completedTitle]}>
+              {task.title}
+            </Text>
+            
+            {isExpanded && task.description ? (
+              <Text style={styles.description}>{task.description}</Text>
+            ) : null}
+            
+            {isExpanded && (
+              <View style={styles.metaContainer}>
+                <Text style={styles.category}>{task.category}</Text>
+                <Text style={[styles.priority, { color: priority.color }]}>
+                  {priority.label}
+                </Text>
+              </View>
+            )}
+            
+            {isExpanded && task.completed && task.mood && (
+              <View style={styles.moodContainer}>
+                <Text style={styles.moodLabel}>Mood: </Text>
+                <Text style={styles.moodEmoji}>{task.mood}</Text>
+              </View>
+            )}
+          </View>
+          
+          <View style={styles.actions}>
+            <TouchableOpacity onPress={handleComplete} style={styles.actionButton}>
+              <Ionicons 
+                name={task.completed ? "refresh-circle" : "checkmark-circle"} 
+                size={24} 
+                color={task.completed ? "#FFA500" : "#4CAF50"} 
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
+              <Ionicons name="trash" size={24} color="#F44336" />
+            </TouchableOpacity>
+          </View>
         </View>
-        
-        <View style={styles.actions}>
-          <TouchableOpacity onPress={handleComplete} style={styles.actionButton}>
-            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
-            <Ionicons name="trash" size={24} color="#F44336" />
-          </TouchableOpacity>
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+
+      <MoodSelector
+        visible={showMoodSelector}
+        onMoodSelect={handleMoodSelect}
+        onClose={() => setShowMoodSelector(false)}
+        selectedMood={task.mood}
+      />
+    </>
   );
 };
 
@@ -104,6 +145,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
   },
+  completedTitle: {
+    textDecorationLine: 'line-through',
+    color: '#888',
+  },
   description: {
     fontSize: 14,
     color: '#666',
@@ -112,6 +157,7 @@ const styles = StyleSheet.create({
   metaContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 8,
   },
   category: {
     fontSize: 12,
@@ -121,6 +167,18 @@ const styles = StyleSheet.create({
   priority: {
     fontSize: 12,
     fontWeight: 'bold',
+  },
+  moodContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  moodLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  moodEmoji: {
+    fontSize: 16,
   },
   actions: {
     flexDirection: 'row',
