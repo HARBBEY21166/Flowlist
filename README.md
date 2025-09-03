@@ -15,7 +15,7 @@ src/
   types/
 
 
-  cd TodoProductivityApp
+  cd FlowList
 
   npm install --global 
   eas-cli && eas init --id df17b332-8ea9-44e2-9e60-7a9091844b7e

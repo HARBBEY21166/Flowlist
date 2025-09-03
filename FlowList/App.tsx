@@ -11,6 +11,8 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import MoodCheckScreen from './src/screens/MoodCheckScreen';
 import { scheduleDailyMoodCheck, registerForPushNotifications } from './src/utils/notifications';
+import { SettingsProvider } from './src/contexts/SettingsContext';
+
 
 // Create the tab navigator type
 export type RootTabParamList = {
@@ -52,6 +54,7 @@ export default function App() {
   }, []);
 
   return (
+     <SettingsProvider>
     <DataProvider>
       <NavigationContainer>
         <Tab.Navigator
@@ -87,5 +90,6 @@ export default function App() {
         onClose={() => setShowMoodCheck(false)}
       />
     </DataProvider>
+     </SettingsProvider>
   );
 }

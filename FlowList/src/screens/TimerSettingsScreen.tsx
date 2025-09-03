@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,48 +9,16 @@ import {
   Switch,
   Alert
 } from 'react-native';
-import { useData } from '../contexts/DataContext';
-import { saveData, loadData } from '../utils/storage';
+import { useSettings, TimerSettings } from '../contexts/SettingsContext';
 import { Ionicons } from '@expo/vector-icons';
 
-interface TimerSettings {
-  workDuration: number; // in minutes
-  shortBreakDuration: number; // in minutes
-  longBreakDuration: number; // in minutes
-  autoStartBreaks: boolean;
-  autoStartPomodoros: boolean;
-  longBreakInterval: number; // number of pomodoros before long break
-}
-
 const TimerSettingsScreen: React.FC = () => {
-  const [settings, setSettings] = useState<TimerSettings>({
-    workDuration: 25,
-    shortBreakDuration: 5,
-    longBreakDuration: 15,
-    autoStartBreaks: false,
-    autoStartPomodoros: false,
-    longBreakInterval: 4
-  });
+  const { timerSettings, updateTimerSettings } = useSettings();
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async (): Promise<void> => {
+  const updateSetting = async <K extends keyof TimerSettings>(key: K, value: TimerSettings[K]): Promise<void> => {
     try {
-      const savedSettings = await loadData<TimerSettings>('timerSettings');
-      if (savedSettings) {
-        setSettings(savedSettings);
-      }
-    } catch (error) {
-      console.error('Error loading timer settings:', error);
-    }
-  };
-
-  const saveSettings = async (newSettings: TimerSettings): Promise<void> => {
-    try {
-      setSettings(newSettings);
-      await saveData('timerSettings', newSettings);
+      const newSettings = { ...timerSettings, [key]: value };
+      await updateTimerSettings(newSettings);
       Alert.alert('Success', 'Timer settings saved!');
     } catch (error) {
       console.error('Error saving timer settings:', error);
@@ -58,21 +26,22 @@ const TimerSettingsScreen: React.FC = () => {
     }
   };
 
-  const updateSetting = <K extends keyof TimerSettings>(key: K, value: TimerSettings[K]): void => {
-    const newSettings = { ...settings, [key]: value };
-    saveSettings(newSettings);
-  };
-
-  const resetToDefaults = (): void => {
-    const defaultSettings: TimerSettings = {
-      workDuration: 25,
-      shortBreakDuration: 5,
-      longBreakDuration: 15,
-      autoStartBreaks: false,
-      autoStartPomodoros: false,
-      longBreakInterval: 4
-    };
-    saveSettings(defaultSettings);
+  const resetToDefaults = async (): Promise<void> => {
+    try {
+      const defaultSettings: TimerSettings = {
+        workDuration: 25,
+        shortBreakDuration: 5,
+        longBreakDuration: 15,
+        autoStartBreaks: false,
+        autoStartPomodoros: false,
+        longBreakInterval: 4
+      };
+      await updateTimerSettings(defaultSettings);
+      Alert.alert('Success', 'Settings reset to defaults!');
+    } catch (error) {
+      console.error('Error resetting settings:', error);
+      Alert.alert('Error', 'Failed to reset settings');
+    }
   };
 
   return (
@@ -91,7 +60,7 @@ const TimerSettingsScreen: React.FC = () => {
         <View style={styles.durationContainer}>
           <TextInput
             style={styles.durationInput}
-            value={settings.workDuration.toString()}
+            value={timerSettings.workDuration.toString()}
             onChangeText={(text) => {
               const value = parseInt(text) || 1;
               updateSetting('workDuration', Math.min(Math.max(value, 1), 60));
@@ -115,7 +84,7 @@ const TimerSettingsScreen: React.FC = () => {
         <View style={styles.durationContainer}>
           <TextInput
             style={styles.durationInput}
-            value={settings.shortBreakDuration.toString()}
+            value={timerSettings.shortBreakDuration.toString()}
             onChangeText={(text) => {
               const value = parseInt(text) || 1;
               updateSetting('shortBreakDuration', Math.min(Math.max(value, 1), 30));
@@ -139,7 +108,7 @@ const TimerSettingsScreen: React.FC = () => {
         <View style={styles.durationContainer}>
           <TextInput
             style={styles.durationInput}
-            value={settings.longBreakDuration.toString()}
+            value={timerSettings.longBreakDuration.toString()}
             onChangeText={(text) => {
               const value = parseInt(text) || 1;
               updateSetting('longBreakDuration', Math.min(Math.max(value, 1), 60));
@@ -163,7 +132,7 @@ const TimerSettingsScreen: React.FC = () => {
         <View style={styles.durationContainer}>
           <TextInput
             style={styles.durationInput}
-            value={settings.longBreakInterval.toString()}
+            value={timerSettings.longBreakInterval.toString()}
             onChangeText={(text) => {
               const value = parseInt(text) || 1;
               updateSetting('longBreakInterval', Math.min(Math.max(value, 1), 10));
@@ -186,20 +155,20 @@ const TimerSettingsScreen: React.FC = () => {
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Auto-start breaks</Text>
             <Switch
-              value={settings.autoStartBreaks}
+              value={timerSettings.autoStartBreaks}
               onValueChange={(value) => updateSetting('autoStartBreaks', value)}
               trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={settings.autoStartBreaks ? '#4361ee' : '#f4f3f4'}
+              thumbColor={timerSettings.autoStartBreaks ? '#4361ee' : '#f4f3f4'}
             />
           </View>
           
           <View style={styles.switchRow}>
             <Text style={styles.switchLabel}>Auto-start focus sessions</Text>
             <Switch
-              value={settings.autoStartPomodoros}
+              value={timerSettings.autoStartPomodoros}
               onValueChange={(value) => updateSetting('autoStartPomodoros', value)}
               trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={settings.autoStartPomodoros ? '#4361ee' : '#f4f3f4'}
+              thumbColor={timerSettings.autoStartPomodoros ? '#4361ee' : '#f4f3f4'}
             />
           </View>
         </View>

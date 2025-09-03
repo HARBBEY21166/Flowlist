@@ -2,30 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { TimerState } from '../types';
 import { loadData } from '../utils/storage';
 
-// Default settings
-const DEFAULT_TIMER_DURATIONS = {
-  [TimerState.WORK]: 25 * 60,
-  [TimerState.SHORT_BREAK]: 5 * 60,
-  [TimerState.LONG_BREAK]: 15 * 60
-};
-
 export const useTimer = () => {
-  const [timeLeft, setTimeLeft] = useState(DEFAULT_TIMER_DURATIONS[TimerState.WORK]);
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [timerState, setTimerState] = useState<TimerState>(TimerState.STOPPED);
   const [sessionCount, setSessionCount] = useState(0);
   const [timerSettings, setTimerSettings] = useState<any>(null);
-  const [longBreakInterval, setLongBreakInterval] = useState(4);
 
-  // Load timer settings and set up listener for changes
+  // Load timer settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
         const settings = await loadData('timerSettings');
         if (settings) {
           setTimerSettings(settings);
-          setLongBreakInterval(settings.longBreakInterval || 4);
-          
-          // Update current time if timer is running
+          // Update current time if needed
           if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
             setTimeLeft(getDuration(timerState, settings));
           }
@@ -36,27 +26,24 @@ export const useTimer = () => {
     };
 
     loadSettings();
-
-    // Set up an interval to check for settings changes
-    const intervalId = setInterval(loadSettings, 1000); // Check every second
-
-    return () => clearInterval(intervalId);
   }, []);
 
-  // Get current duration based on state and settings
-  const getDuration = useCallback((state: TimerState, customSettings?: any): number => {
-    const settings = customSettings || timerSettings;
-    if (!settings) return DEFAULT_TIMER_DURATIONS[state];
+  const getDuration = useCallback((state: TimerState, settings: any = timerSettings): number => {
+    if (!settings) {
+      // Default durations if no settings
+      switch (state) {
+        case TimerState.WORK: return 25 * 60;
+        case TimerState.SHORT_BREAK: return 5 * 60;
+        case TimerState.LONG_BREAK: return 15 * 60;
+        default: return 25 * 60;
+      }
+    }
     
     switch (state) {
-      case TimerState.WORK:
-        return (settings.workDuration || 25) * 60;
-      case TimerState.SHORT_BREAK:
-        return (settings.shortBreakDuration || 5) * 60;
-      case TimerState.LONG_BREAK:
-        return (settings.longBreakDuration || 15) * 60;
-      default:
-        return DEFAULT_TIMER_DURATIONS[state];
+      case TimerState.WORK: return (settings.workDuration || 25) * 60;
+      case TimerState.SHORT_BREAK: return (settings.shortBreakDuration || 5) * 60;
+      case TimerState.LONG_BREAK: return (settings.longBreakDuration || 15) * 60;
+      default: return 25 * 60;
     }
   }, [timerSettings]);
 
@@ -85,6 +72,7 @@ export const useTimer = () => {
     if (timerState === TimerState.WORK) {
       const nextSessionCount = sessionCount + 1;
       setSessionCount(nextSessionCount);
+      const longBreakInterval = timerSettings?.longBreakInterval || 4;
       const nextState = nextSessionCount % longBreakInterval === 0 
         ? TimerState.LONG_BREAK 
         : TimerState.SHORT_BREAK;
@@ -94,15 +82,9 @@ export const useTimer = () => {
       setTimerState(TimerState.WORK);
       setTimeLeft(getDuration(TimerState.WORK));
     }
-  }, [timerState, sessionCount, longBreakInterval, getDuration]);
+  }, [timerState, sessionCount, timerSettings, getDuration]);
 
-  // Update timeLeft when settings change
-  useEffect(() => {
-    if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
-      setTimeLeft(getDuration(timerState));
-    }
-  }, [timerSettings, timerState, getDuration]);
-
+  // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
@@ -127,7 +109,7 @@ export const useTimer = () => {
     timeLeft,
     timerState,
     sessionCount,
-    longBreakInterval,
+    longBreakInterval: timerSettings?.longBreakInterval || 4,
     startTimer,
     pauseTimer,
     resetTimer,

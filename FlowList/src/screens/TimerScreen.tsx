@@ -15,6 +15,10 @@ import { TimerState } from '../types';
 import { TIMER_DURATIONS } from '../utils/constants';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
+import { useSettings } from '../contexts/SettingsContext';
+import { useIsFocused } from '@react-navigation/native';
+
+
 
 const TimerScreen: React.FC = () => {
   const { tasks, activeTaskId, setActiveTask } = useData();
@@ -27,6 +31,26 @@ const TimerScreen: React.FC = () => {
     resetTimer,
     skipTimer
   } = useTimer();
+
+  const { timerSettings } = useSettings();
+
+  const isFocused = useIsFocused();
+
+useEffect(() => {
+  if (isFocused) {
+    // Reload settings when screen comes into focus
+    const reloadSettings = async () => {
+      const settings = await loadData('timerSettings');
+      if (settings) {
+        // Force timer reset to apply new settings
+        if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
+          setTimeLeft(getDuration(timerState, settings));
+        }
+      }
+    };
+    reloadSettings();
+  }
+}, [isFocused]);
   
   const [appState, setAppState] = useState(AppState.currentState);
 
@@ -114,6 +138,19 @@ const TimerScreen: React.FC = () => {
     return (totalTime - timeLeft) / totalTime;
   };
 
+  const getDuration = (state: TimerState): number => {
+  switch (state) {
+    case TimerState.WORK:
+      return timerSettings.workDuration * 60;
+    case TimerState.SHORT_BREAK:
+      return timerSettings.shortBreakDuration * 60;
+    case TimerState.LONG_BREAK:
+      return timerSettings.longBreakDuration * 60;
+    default:
+      return 25 * 60;
+  }
+};
+
   return (
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
       <View style={styles.content}>
@@ -133,11 +170,13 @@ const TimerScreen: React.FC = () => {
 
         <View style={styles.sessionInfo}>
           <Text style={styles.sessionText}>
-            Session: {sessionCount % 4}/4
-          </Text>
-          <Text style={styles.sessionText}>
-            Next: {sessionCount % 4 === 3 ? 'Long Break' : 'Short Break'}
-          </Text>
+  Session: {sessionCount % timerSettings.longBreakInterval}/{timerSettings.longBreakInterval}
+</Text>
+<Text style={styles.sessionText}>
+  Next: {sessionCount % timerSettings.longBreakInterval === timerSettings.longBreakInterval - 1 
+    ? 'Long Break' 
+    : 'Short Break'}
+</Text>
         </View>
 
         <View style={styles.controls}>
