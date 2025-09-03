@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { DataProvider } from './src/contexts/DataContext';
@@ -9,15 +9,8 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
-
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+import MoodCheckScreen from './src/screens/MoodCheckScreen';
+import { scheduleDailyMoodCheck, registerForPushNotifications } from './src/utils/notifications';
 
 // Create the tab navigator type
 export type RootTabParamList = {
@@ -29,30 +22,33 @@ export type RootTabParamList = {
 
 const Tab = createBottomTabNavigator<RootTabParamList>();
 
-// Create a simple placeholder screen for the tabs we haven't built yet
-const PlaceholderScreen: React.FC<{ name: string }> = ({ name }) => {
-  return (
-    <div style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <p>{name} Screen - Coming Soon!</p>
-    </div>
-  );
-};
-
 export default function App() {
-  // Request notification permissions
+  const [showMoodCheck, setShowMoodCheck] = useState(false);
+
+  // Setup notifications
   useEffect(() => {
-    const requestPermissions = async () => {
-      if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'default',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
+    const setupNotifications = async () => {
+      try {
+        // Request notification permissions
+        await registerForPushNotifications();
+        
+        // Schedule daily mood check
+        await scheduleDailyMoodCheck();
+
+        // Handle notifications when app is in foreground
+        const subscription = Notifications.addNotificationReceivedListener(notification => {
+          if (notification.request.content.data?.type === 'mood-check') {
+            setShowMoodCheck(true);
+          }
         });
+
+        return () => subscription.remove();
+      } catch (error) {
+        console.error('Error setting up notifications:', error);
       }
     };
 
-    requestPermissions();
+    setupNotifications();
   }, []);
 
   return (
@@ -85,6 +81,11 @@ export default function App() {
           <Tab.Screen name="Settings" component={SettingsScreen} />
         </Tab.Navigator>
       </NavigationContainer>
+      
+      <MoodCheckScreen
+        visible={showMoodCheck}
+        onClose={() => setShowMoodCheck(false)}
+      />
     </DataProvider>
   );
 }

@@ -21,6 +21,12 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoodSelector, setShowMoodSelector] = useState(false);
 
+  const handleEditMood = (): void => {
+  if (task.completed) {
+    setShowMoodSelector(true);
+  }
+};
+
   const handleComplete = async (): Promise<void> => {
     // For completed tasks, show mood selector
     if (!task.completed) {
@@ -97,6 +103,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
                 color={task.completed ? "#FFA500" : "#4CAF50"} 
               />
             </TouchableOpacity>
+            // Add an edit button to the actions
+<TouchableOpacity onPress={handleEditMood} style={styles.actionButton}>
+  <Ionicons 
+    name="color-palette" 
+    size={24} 
+    color={task.completed ? "#9C27B0" : "#ccc"} 
+  />
+</TouchableOpacity>
             <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
               <Ionicons name="trash" size={24} color="#F44336" />
             </TouchableOpacity>

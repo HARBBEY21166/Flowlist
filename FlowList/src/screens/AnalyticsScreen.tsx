@@ -1,17 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import MoodHistory from '../components/MoodHistory';
+import MoodAnalytics from '../components/MoodAnalytics';
 
 const AnalyticsScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.header}>Productivity Analytics</Text>
+      
+      {/* Mood History */}
       <MoodHistory />
       
-      {/* We'll add more analytics components here later */}
+      {/* Advanced Mood Analytics */}
+      <MoodAnalytics />
+      
+      {/* Placeholder for future analytics */}
       <View style={styles.comingSoon}>
-        <Text style={styles.comingSoonText}>More analytics coming soon!</Text>
-        <Text>Task completion rates, productivity trends, and more...</Text>
+        <Text style={styles.comingSoonText}>More Analytics Coming Soon</Text>
+        <Text style={styles.comingSoonSubtext}>
+          Productivity trends, task completion rates, and focus time analysis
+        </Text>
       </View>
     </ScrollView>
   );
@@ -35,12 +43,17 @@ const styles = StyleSheet.create({
     padding: 20,
     margin: 16,
     alignItems: 'center',
+    marginTop: 20,
   },
   comingSoonText: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
     color: '#4361ee',
+  },
+  comingSoonSubtext: {
+    textAlign: 'center',
+    color: '#666',
   },
 });
 
