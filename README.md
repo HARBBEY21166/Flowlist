@@ -17,3 +17,11 @@ src/
 
   cd TodoProductivityApp
 
+  npm install --global 
+  eas-cli && eas init --id df17b332-8ea9-44e2-9e60-7a9091844b7e
+
+eas submit --platform android
+
+9cb58626-232d-4294-8736-724b60a06407
+
+npx expo start --tunnel

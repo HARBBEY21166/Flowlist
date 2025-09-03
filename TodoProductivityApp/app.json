@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "TodoProductivityApp",
-    "slug": "TodoProductivityApp",
+    "slug": "pomodoropal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,17 +13,28 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.abbeybear.pomodoropal",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.abbeybear.pomodoropal"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "df17b332-8ea9-44e2-9e60-7a9091844b7e"
+      }
+    },
+    "owner": "abbeybear"
   }
 }
