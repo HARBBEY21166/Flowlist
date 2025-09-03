@@ -2,26 +2,15 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { loadData, saveData } from '../utils/storage';
 import { Task, Analytics } from '../types';
 
-// Helper function to get current date string (YYYY-MM-DD)
-const getCurrentDateString = (): string => {
-  const date = new Date();
-  return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
-};
-
-// Helper function to get hour from timestamp
-const getHourFromTimestamp = (timestamp: number): number => {
-  return new Date(timestamp).getHours();
-};
-
 // Define the shape of our context
 interface DataContextType {
   tasks: Task[];
   analytics: Analytics;
   isLoading: boolean;
+  activeTaskId: string | null;
   addTask: (task: Omit<Task, 'id' | 'completed' | 'createdAt' | 'completedAt' | 'mood' | 'pomodoroSessions'>) => Promise<Task>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<Task | undefined>;
   deleteTask: (taskId: string) => Promise<void>;
-  activeTaskId: string | null;
   setActiveTask: (taskId: string | null) => void;
 }
 
@@ -85,96 +74,115 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateTask = async (taskId: string, updates: Partial<Task>): Promise<Task | undefined> => {
-    const updatedTasks = tasks.map(task => 
-      task.id === taskId ? { ...task, ...updates } : task
-    );
-    
-    setTasks(updatedTasks);
-    await saveData('tasks', updatedTasks);
-    
-    const updatedTask = updatedTasks.find(task => task.id === taskId);
-    
-    // If task was marked as completed, update analytics
-    if (updates.completed && updatedTask) {
-      await updateAnalyticsOnTaskCompletion(updatedTask);
+    try {
+      // Create a new array with the updated task
+      const updatedTasks = tasks.map(task => 
+        task.id === taskId ? { ...task, ...updates } : task
+      );
+      
+      // Update state
+      setTasks(updatedTasks);
+      
+      // Save to storage
+      await saveData('tasks', updatedTasks);
+      
+      // Find and return the updated task
+      const updatedTask = updatedTasks.find(task => task.id === taskId);
+      
+      // If task was marked as completed, update analytics
+      if (updates.completed && updatedTask) {
+        await updateAnalyticsOnTaskCompletion(updatedTask);
+      }
+      
+      return updatedTask;
+    } catch (error) {
+      console.error('Error updating task:', error);
+      return undefined;
     }
-    
-    return updatedTask;
   };
 
   const deleteTask = async (taskId: string): Promise<void> => {
-    const updatedTasks = tasks.filter(task => task.id !== taskId);
-    setTasks(updatedTasks);
-    await saveData('tasks', updatedTasks);
+    try {
+      const updatedTasks = tasks.filter(task => task.id !== taskId);
+      setTasks(updatedTasks);
+      await saveData('tasks', updatedTasks);
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
-const updateAnalyticsOnTaskCompletion = async (task: Task): Promise<void> => {
-  const currentDate = getCurrentDateString();
-  const currentHour = getHourFromTimestamp(Date.now());
-  
-  // Get current daily stats or create new ones
-  const currentStats = analytics.dailyStats[currentDate] || {
-    tasksCompleted: 0,
-    pomodoroSessions: 0,
-    mostActiveHour: currentHour,
-    dominantMood: task.mood || '😐'
+  // Helper function to get current date string (YYYY-MM-DD)
+  const getCurrentDateString = (): string => {
+    const date = new Date();
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
   };
 
-  // Update stats
-  const updatedStats = {
-    ...currentStats,
-    tasksCompleted: currentStats.tasksCompleted + 1,
-    dominantMood: task.mood || currentStats.dominantMood
+  const updateAnalyticsOnTaskCompletion = async (task: Task): Promise<void> => {
+    try {
+      const currentDate = getCurrentDateString();
+      const currentHour = new Date().getHours();
+      
+      // Get current daily stats or create new ones
+      const currentStats = analytics.dailyStats[currentDate] || {
+        tasksCompleted: 0,
+        pomodoroSessions: 0,
+        mostActiveHour: currentHour,
+        dominantMood: task.mood || '😐'
+      };
+
+      // Update stats
+      const updatedStats = {
+        ...currentStats,
+        tasksCompleted: currentStats.tasksCompleted + 1,
+        dominantMood: task.mood || currentStats.dominantMood
+      };
+
+      // Update streaks
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayString = `${yesterday.getFullYear()}-${(yesterday.getMonth() + 1).toString().padStart(2, '0')}-${yesterday.getDate().toString().padStart(2, '0')}`;
+
+      let updatedStreaks = { ...analytics.streaks };
+      
+      if (analytics.streaks.lastCompletionDate === yesterdayString) {
+        // Consecutive day
+        updatedStreaks.current += 1;
+        updatedStreaks.longest = Math.max(updatedStreaks.longest, updatedStreaks.current);
+      } else if (analytics.streaks.lastCompletionDate !== currentDate) {
+        // New day (not today)
+        updatedStreaks.current = 1;
+        updatedStreaks.longest = Math.max(updatedStreaks.longest, 1);
+      }
+      
+      updatedStreaks.lastCompletionDate = currentDate;
+
+      // Update analytics state
+      const updatedAnalytics = {
+        ...analytics,
+        dailyStats: {
+          ...analytics.dailyStats,
+          [currentDate]: updatedStats
+        },
+        streaks: updatedStreaks
+      };
+
+      setAnalytics(updatedAnalytics);
+      await saveData('analytics', updatedAnalytics);
+    } catch (error) {
+      console.error('Error updating analytics:', error);
+    }
   };
-
-  // Update hour activity (simple implementation)
-  const hourCounts: { [hour: number]: number } = {};
-  // This would be more sophisticated in a real app
-  updatedStats.mostActiveHour = currentHour;
-
-  // Update streaks
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayString = `${yesterday.getFullYear()}-${(yesterday.getMonth() + 1).toString().padStart(2, '0')}-${yesterday.getDate().toString().padStart(2, '0')}`;
-
-  let updatedStreaks = { ...analytics.streaks };
-  
-  if (analytics.streaks.lastCompletionDate === yesterdayString) {
-    // Consecutive day
-    updatedStreaks.current += 1;
-    updatedStreaks.longest = Math.max(updatedStreaks.longest, updatedStreaks.current);
-  } else if (analytics.streaks.lastCompletionDate !== currentDate) {
-    // New day (not today)
-    updatedStreaks.current = 1;
-    updatedStreaks.longest = Math.max(updatedStreaks.longest, 1);
-  }
-  
-  updatedStreaks.lastCompletionDate = currentDate;
-
-  // Update analytics state
-  const updatedAnalytics = {
-    ...analytics,
-    dailyStats: {
-      ...analytics.dailyStats,
-      [currentDate]: updatedStats
-    },
-    streaks: updatedStreaks
-  };
-
-  setAnalytics(updatedAnalytics);
-  await saveData('analytics', updatedAnalytics);
-};
 
   const value: DataContextType = {
     tasks,
     analytics,
     isLoading,
+    activeTaskId,
     addTask,
     updateTask,
     deleteTask,
-    activeTaskId,
-setActiveTask
+    setActiveTask
   };
 
   return (

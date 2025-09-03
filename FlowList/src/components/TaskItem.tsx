@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
 import { PRIORITIES } from '../utils/constants';
-import { Task, Mood } from '../types';
+import { Task } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import MoodSelector from './MoodSelector';
 
@@ -21,29 +21,37 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoodSelector, setShowMoodSelector] = useState(false);
 
-  const handleEditMood = (): void => {
-  if (task.completed) {
-    setShowMoodSelector(true);
-  }
-};
-
   const handleComplete = async (): Promise<void> => {
-    // For completed tasks, show mood selector
-    if (!task.completed) {
-      setShowMoodSelector(true);
-    } else {
-      // If already completed, just update without mood
-      await updateTask(task.id, { completed: false, completedAt: null, mood: null });
+    try {
+      if (!task.completed) {
+        // For incomplete tasks, show mood selector
+        setShowMoodSelector(true);
+      } else {
+        // If already completed, mark as incomplete
+        await updateTask(task.id, { 
+          completed: false, 
+          completedAt: null, 
+          mood: null 
+        });
+      }
+    } catch (error) {
+      console.error('Error completing task:', error);
+      Alert.alert('Error', 'Failed to update task');
     }
   };
 
-  const handleMoodSelect = async (mood: Mood): Promise<void> => {
-    await updateTask(task.id, { 
-      completed: true, 
-      completedAt: Date.now(), 
-      mood: mood.emoji 
-    });
-    setShowMoodSelector(false);
+  const handleMoodSelect = async (mood: { emoji: string; name: string; color: string }): Promise<void> => {
+    try {
+      await updateTask(task.id, { 
+        completed: true, 
+        completedAt: Date.now(), 
+        mood: mood.emoji 
+      });
+      setShowMoodSelector(false);
+    } catch (error) {
+      console.error('Error updating mood:', error);
+      Alert.alert('Error', 'Failed to save mood');
+    }
   };
 
   const handleDelete = (): void => {
@@ -52,9 +60,26 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
       "Are you sure you want to delete this task?",
       [
         { text: "Cancel", style: "cancel" },
-        { text: "Delete", onPress: () => deleteTask(task.id), style: "destructive" }
+        { 
+          text: "Delete", 
+          onPress: async () => {
+            try {
+              await deleteTask(task.id);
+            } catch (error) {
+              console.error('Error deleting task:', error);
+              Alert.alert('Error', 'Failed to delete task');
+            }
+          }, 
+          style: "destructive" 
+        }
       ]
     );
+  };
+
+  const handleEditMood = (): void => {
+    if (task.completed) {
+      setShowMoodSelector(true);
+    }
   };
 
   const priority = PRIORITIES[task.priority.toUpperCase() as keyof typeof PRIORITIES];
@@ -103,14 +128,15 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
                 color={task.completed ? "#FFA500" : "#4CAF50"} 
               />
             </TouchableOpacity>
-            // Add an edit button to the actions
-<TouchableOpacity onPress={handleEditMood} style={styles.actionButton}>
-  <Ionicons 
-    name="color-palette" 
-    size={24} 
-    color={task.completed ? "#9C27B0" : "#ccc"} 
-  />
-</TouchableOpacity>
+            
+            <TouchableOpacity onPress={handleEditMood} style={styles.actionButton}>
+              <Ionicons 
+                name="color-palette" 
+                size={24} 
+                color={task.completed ? "#9C27B0" : "#ccc"} 
+              />
+            </TouchableOpacity>
+            
             <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
               <Ionicons name="trash" size={24} color="#F44336" />
             </TouchableOpacity>
