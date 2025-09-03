@@ -3,11 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  Switch,
   TouchableOpacity,
   ScrollView,
-  Alert
+  Switch,
+  Alert,
+  Modal  // Make sure to import Modal
 } from 'react-native';
+import { useData } from '../contexts/DataContext';
 import { 
   checkNotificationPermissions, 
   requestNotificationPermissions,
@@ -15,10 +17,12 @@ import {
   sendMoodNotification
 } from '../utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
+import TimerSettingsScreen from './TimerSettingsScreen';  // Import the new screen
 
 const SettingsScreen: React.FC = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [dailyReminders, setDailyReminders] = useState(false);
+  const [showTimerSettings, setShowTimerSettings] = useState(false);  // State for modal
 
   useEffect(() => {
     loadNotificationSettings();
@@ -28,7 +32,6 @@ const SettingsScreen: React.FC = () => {
     try {
       const hasPermission = await checkNotificationPermissions();
       setNotificationsEnabled(hasPermission);
-      // For simplicity, we'll assume daily reminders are enabled if notifications are enabled
       setDailyReminders(hasPermission);
     } catch (error) {
       console.error('Error loading notification settings:', error);
@@ -68,82 +71,122 @@ const SettingsScreen: React.FC = () => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.header}>Settings</Text>
-      
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notifications</Text>
+    <>
+      <ScrollView style={styles.container}>
+        <Text style={styles.header}>Settings</Text>
         
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Ionicons name="notifications" size={24} color="#4361ee" />
-            <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Enable Notifications</Text>
-              <Text style={styles.settingDescription}>
-                Receive reminders and mood check-ins
-              </Text>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Notifications</Text>
+          
+          <View style={styles.settingItem}>
+            <View style={styles.settingInfo}>
+              <Ionicons name="notifications" size={24} color="#4361ee" />
+              <View style={styles.settingText}>
+                <Text style={styles.settingLabel}>Enable Notifications</Text>
+                <Text style={styles.settingDescription}>
+                  Receive reminders and mood check-ins
+                </Text>
+              </View>
             </View>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleNotificationsToggle}
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
+            />
           </View>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={handleNotificationsToggle}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
-          />
-        </View>
 
-        <View style={styles.settingItem}>
-          <View style={styles.settingInfo}>
-            <Ionicons name="calendar" size={24} color="#4361ee" />
-            <View style={styles.settingText}>
-              <Text style={styles.settingLabel}>Daily Reminders</Text>
-              <Text style={styles.settingDescription}>
-                8 PM mood check-in reminders
-              </Text>
+          <View style={styles.settingItem}>
+            <View style={styles.settingInfo}>
+              <Ionicons name="calendar" size={24} color="#4361ee" />
+              <View style={styles.settingText}>
+                <Text style={styles.settingLabel}>Daily Reminders</Text>
+                <Text style={styles.settingDescription}>
+                  8 PM mood check-in reminders
+                </Text>
+              </View>
             </View>
+            <Switch
+              value={dailyReminders}
+              onValueChange={setDailyReminders}
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={dailyReminders ? '#4361ee' : '#f4f3f4'}
+              disabled={!notificationsEnabled}
+            />
           </View>
-          <Switch
-            value={dailyReminders}
-            onValueChange={setDailyReminders}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={dailyReminders ? '#4361ee' : '#f4f3f4'}
+
+          <TouchableOpacity 
+            style={[styles.testButton, !notificationsEnabled && styles.testButtonDisabled]}
+            onPress={testNotification}
             disabled={!notificationsEnabled}
-          />
+          >
+            <Ionicons name="send" size={20} color="white" />
+            <Text style={styles.testButtonText}>Send Test Notification</Text>
+          </TouchableOpacity>
         </View>
 
+        {/* NEW: Timer Settings Link */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Timer</Text>
+          
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => setShowTimerSettings(true)}
+          >
+            <View style={styles.settingInfo}>
+              <Ionicons name="timer" size={24} color="#4361ee" />
+              <View style={styles.settingText}>
+                <Text style={styles.settingLabel}>Timer Settings</Text>
+                <Text style={styles.settingDescription}>
+                  Customize your focus and break durations
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#ccc" />
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>About</Text>
+          
+          <View style={styles.aboutItem}>
+            <Ionicons name="heart" size={24} color="#e74c3c" />
+            <View style={styles.aboutText}>
+              <Text style={styles.aboutLabel}>App Version</Text>
+              <Text style={styles.aboutValue}>1.0.0</Text>
+            </View>
+          </View>
+
+          <View style={styles.aboutItem}>
+            <Ionicons name="code-slash" size={24} color="#2c3e50" />
+            <View style={styles.aboutText}>
+              <Text style={styles.aboutLabel}>Built with</Text>
+              <Text style={styles.aboutValue}>React Native & Expo</Text>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+
+      {/* MODAL GOES HERE - Outside the ScrollView but inside the component */}
+      <Modal
+        animationType="slide"
+        visible={showTimerSettings}
+        onRequestClose={() => setShowTimerSettings(false)}
+      >
+        <TimerSettingsScreen />
         <TouchableOpacity 
-          style={[styles.testButton, !notificationsEnabled && styles.testButtonDisabled]}
-          onPress={testNotification}
-          disabled={!notificationsEnabled}
+          style={styles.closeModalButton}
+          onPress={() => setShowTimerSettings(false)}
         >
-          <Ionicons name="send" size={20} color="white" />
-          <Text style={styles.testButtonText}>Send Test Notification</Text>
+          <Ionicons name="close" size={24} color="#333" />
+          <Text style={styles.closeModalText}>Close</Text>
         </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>About</Text>
-        
-        <View style={styles.aboutItem}>
-          <Ionicons name="heart" size={24} color="#e74c3c" />
-          <View style={styles.aboutText}>
-            <Text style={styles.aboutLabel}>App Version</Text>
-            <Text style={styles.aboutValue}>1.0.0</Text>
-          </View>
-        </View>
-
-        <View style={styles.aboutItem}>
-          <Ionicons name="code-slash" size={24} color="#2c3e50" />
-          <View style={styles.aboutText}>
-            <Text style={styles.aboutLabel}>Built with</Text>
-            <Text style={styles.aboutValue}>React Native & Expo</Text>
-          </View>
-        </View>
-      </View>
-    </ScrollView>
+      </Modal>
+    </>
   );
 };
 
+// Add these new styles to your existing StyleSheet
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -232,6 +275,22 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#2c3e50',
     marginTop: 2,
+  },
+  // NEW STYLES FOR MODAL
+  closeModalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  closeModalText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#333',
   },
 });
 
