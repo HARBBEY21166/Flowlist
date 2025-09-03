@@ -11,6 +11,7 @@ import { PRIORITIES } from '../utils/constants';
 import { Task } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import MoodSelector from './MoodSelector';
+import EditTaskModal from './EditTaskModal';
 
 interface TaskItemProps {
   task: Task;
@@ -20,6 +21,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   const { updateTask, deleteTask } = useData();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoodSelector, setShowMoodSelector] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleComplete = async (): Promise<void> => {
     try {
@@ -82,6 +84,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
     }
   };
 
+  const handleEditTask = (): void => {
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = (): void => {
+    setIsExpanded(false);
+  };
+
   const priority = PRIORITIES[task.priority.toUpperCase() as keyof typeof PRIORITIES];
 
   return (
@@ -129,13 +139,49 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
               />
             </TouchableOpacity>
             
-            <TouchableOpacity onPress={handleEditMood} style={styles.actionButton}>
-              <Ionicons 
-                name="color-palette" 
-                size={24} 
-                color={task.completed ? "#9C27B0" : "#ccc"} 
-              />
+            <TouchableOpacity onPress={handleEditTask} style={styles.actionButton}>
+              <Ionicons name="create" size={24} color="#2196F3" />
             </TouchableOpacity>
+            
+            <TouchableOpacity 
+  onPress={() => {
+    if (task.completed) {
+      handleEditMood();
+    } else {
+      Alert.alert(
+        "Mood Tracking", 
+        "Mood tracking is available after you complete a task. This helps you reflect on how you felt when finishing it.\n\nComplete the task first, then you can add or edit your mood!",
+        [
+          { 
+            text: "Complete Task", 
+            onPress: () => handleComplete() 
+          },
+          { 
+            text: "OK", 
+            style: "cancel" 
+          }
+        ]
+      );
+    }
+  }} 
+  style={styles.actionButton}
+>
+  <View style={styles.moodButtonContainer}>
+    <Ionicons 
+      name="color-palette" 
+      size={24} 
+      color={task.completed ? "#9C27B0" : "#ccc"} 
+    />
+    {!task.completed && (
+      <Ionicons 
+        name="information-circle" 
+        size={12} 
+        color="#ccc" 
+        style={styles.infoIcon}
+      />
+    )}
+  </View>
+</TouchableOpacity>
             
             <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
               <Ionicons name="trash" size={24} color="#F44336" />
@@ -149,6 +195,13 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
         onMoodSelect={handleMoodSelect}
         onClose={() => setShowMoodSelector(false)}
         selectedMood={task.mood}
+      />
+
+      <EditTaskModal
+        visible={showEditModal}
+        task={task}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleSaveEdit}
       />
     </>
   );
@@ -209,10 +262,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   moodContainer: {
+      position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
+      justifyContent: 'center',
+
   },
+  infoIcon: {
+  position: 'absolute',
+  top: -2,
+  right: -2,
+},
   moodLabel: {
     fontSize: 12,
     color: '#666',
