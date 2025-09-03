@@ -10,6 +10,8 @@ interface DataContextType {
   addTask: (task: Omit<Task, 'id' | 'completed' | 'createdAt' | 'completedAt' | 'mood' | 'pomodoroSessions'>) => Promise<Task>;
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<Task | undefined>;
   deleteTask: (taskId: string) => Promise<void>;
+  activeTaskId: string | null;
+  setActiveTask: (taskId: string | null) => void;
 }
 
 // Create the context with a default value
@@ -24,6 +26,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     weeklyData: []
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTaskId, setActiveTask] = useState<string | null>(null);
 
   useEffect(() => {
     loadAppData();
@@ -105,7 +108,9 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     isLoading,
     addTask,
     updateTask,
-    deleteTask
+    deleteTask,
+    activeTaskId,
+setActiveTask
   };
 
   return (
