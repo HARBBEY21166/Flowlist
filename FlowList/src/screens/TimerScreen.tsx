@@ -7,18 +7,16 @@ import {
   Vibration,
   AppState,
   AppStateStatus,
-  ScrollView
+  ScrollView,
+  Alert
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
 import { useTimer } from '../hooks/useTimer';
 import { TimerState } from '../types';
-import { TIMER_DURATIONS } from '../utils/constants';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
-import { useSettings } from '../contexts/SettingsContext';
 import { useIsFocused } from '@react-navigation/native';
-
-
+import { loadData } from '../utils/storage'; // Add this import
 
 const TimerScreen: React.FC = () => {
   const { tasks, activeTaskId, setActiveTask } = useData();
@@ -26,33 +24,17 @@ const TimerScreen: React.FC = () => {
     timeLeft,
     timerState,
     sessionCount,
+    longBreakInterval,
     startTimer,
     pauseTimer,
     resetTimer,
-    skipTimer
+    skipTimer,
+    setTimerState,
+    setTimeLeft
   } = useTimer();
-
-  const { timerSettings } = useSettings();
-
-  const isFocused = useIsFocused();
-
-useEffect(() => {
-  if (isFocused) {
-    // Reload settings when screen comes into focus
-    const reloadSettings = async () => {
-      const settings = await loadData('timerSettings');
-      if (settings) {
-        // Force timer reset to apply new settings
-        if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
-          setTimeLeft(getDuration(timerState, settings));
-        }
-      }
-    };
-    reloadSettings();
-  }
-}, [isFocused]);
   
   const [appState, setAppState] = useState(AppState.currentState);
+  const isFocused = useIsFocused();
 
   // Format time for display (MM:SS)
   const formatTime = (seconds: number): string => {
@@ -83,6 +65,26 @@ useEffect(() => {
     }
   };
 
+  // Get duration based on timer state and settings
+  const getDuration = (state: TimerState, settings?: any): number => {
+    if (!settings) {
+      // Default durations if no settings
+      switch (state) {
+        case TimerState.WORK: return 25 * 60;
+        case TimerState.SHORT_BREAK: return 5 * 60;
+        case TimerState.LONG_BREAK: return 15 * 60;
+        default: return 25 * 60;
+      }
+    }
+    
+    switch (state) {
+      case TimerState.WORK: return (settings.workDuration || 25) * 60;
+      case TimerState.SHORT_BREAK: return (settings.shortBreakDuration || 5) * 60;
+      case TimerState.LONG_BREAK: return (settings.longBreakDuration || 15) * 60;
+      default: return 25 * 60;
+    }
+  };
+
   // Handle app state changes (background/foreground)
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
@@ -93,6 +95,8 @@ useEffect(() => {
       subscription.remove();
     };
   }, []);
+
+  
 
   // Handle timer completion
   useEffect(() => {
@@ -121,35 +125,41 @@ useEffect(() => {
     let nextState: TimerState;
     if (timerState === TimerState.WORK) {
       const nextSessionCount = sessionCount + 1;
-      nextState = nextSessionCount % 4 === 0 
+      const nextState = nextSessionCount % longBreakInterval === 0 
         ? TimerState.LONG_BREAK 
         : TimerState.SHORT_BREAK;
+      setTimerState(nextState);
+      
+      // Load settings for the new duration
+      try {
+        const settings = await loadData('timerSettings');
+        setTimeLeft(getDuration(nextState, settings));
+      } catch (error) {
+        console.error('Error loading settings for next state:', error);
+        setTimeLeft(getDuration(nextState));
+      }
     } else {
-      nextState = TimerState.WORK;
+      setTimerState(TimerState.WORK);
+      try {
+        const settings = await loadData('timerSettings');
+        setTimeLeft(getDuration(TimerState.WORK, settings));
+      } catch (error) {
+        console.error('Error loading settings for work state:', error);
+        setTimeLeft(getDuration(TimerState.WORK));
+      }
     }
-
-    // For now, we'll just log this. We'll implement the full state management later
-    console.log(`Timer completed. Next state: ${nextState}`);
   };
 
   // Calculate progress percentage
   const getProgress = (): number => {
-    const totalTime = TIMER_DURATIONS[timerState] || TIMER_DURATIONS[TimerState.WORK];
-    return (totalTime - timeLeft) / totalTime;
+    try {
+      const settings = {}; // We'll load this dynamically
+      const totalTime = getDuration(timerState, settings);
+      return (totalTime - timeLeft) / totalTime;
+    } catch (error) {
+      return 0;
+    }
   };
-
-  const getDuration = (state: TimerState): number => {
-  switch (state) {
-    case TimerState.WORK:
-      return timerSettings.workDuration * 60;
-    case TimerState.SHORT_BREAK:
-      return timerSettings.shortBreakDuration * 60;
-    case TimerState.LONG_BREAK:
-      return timerSettings.longBreakDuration * 60;
-    default:
-      return 25 * 60;
-  }
-};
 
   return (
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
@@ -170,13 +180,13 @@ useEffect(() => {
 
         <View style={styles.sessionInfo}>
           <Text style={styles.sessionText}>
-  Session: {sessionCount % timerSettings.longBreakInterval}/{timerSettings.longBreakInterval}
-</Text>
-<Text style={styles.sessionText}>
-  Next: {sessionCount % timerSettings.longBreakInterval === timerSettings.longBreakInterval - 1 
-    ? 'Long Break' 
-    : 'Short Break'}
-</Text>
+            Session: {sessionCount % longBreakInterval}/{longBreakInterval}
+          </Text>
+          <Text style={styles.sessionText}>
+            Next: {sessionCount % longBreakInterval === longBreakInterval - 1 
+              ? 'Long Break' 
+              : 'Short Break'}
+          </Text>
         </View>
 
         <View style={styles.controls}>
@@ -198,7 +208,7 @@ useEffect(() => {
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.controlButton} onPress={skipTimer}>
-            <Ionicons name="skip-forward" size={24} color="white" />
+            <Ionicons name="play-skip-forward" size={24} color="white" />
             <Text style={styles.controlText}>Skip</Text>
           </TouchableOpacity>
         </View>

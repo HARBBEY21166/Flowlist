@@ -34,3 +34,6 @@ Adding mood tracking
 Creating the analytics dashboard
 
 Adding notifications
+
+
+eas build -p android --profile preview
