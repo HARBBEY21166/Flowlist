@@ -12,6 +12,10 @@ interface DataContextType {
   updateTask: (taskId: string, updates: Partial<Task>) => Promise<Task | undefined>;
   deleteTask: (taskId: string) => Promise<void>;
   setActiveTask: (taskId: string | null) => void;
+   notificationsEnabled: boolean;
+  setNotificationsEnabled: (enabled: boolean) => void;
+  dailyReminders: boolean;
+  setDailyReminders: (enabled: boolean) => void;
 }
 
 // Create the context with a default value
@@ -182,7 +186,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     addTask,
     updateTask,
     deleteTask,
-    setActiveTask
+    setActiveTask,
+    notificationsEnabled: false,
+    setNotificationsEnabled: function (enabled: boolean): void {
+      throw new Error('Function not implemented.');
+    },
+    dailyReminders: false,
+    setDailyReminders: function (enabled: boolean): void {
+      throw new Error('Function not implemented.');
+    }
   };
 
   return (

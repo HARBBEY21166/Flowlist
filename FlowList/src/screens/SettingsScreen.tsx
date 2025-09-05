@@ -17,16 +17,33 @@ import {
   sendMoodNotification
 } from '../utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
-import TimerSettingsScreen from './TimerSettingsScreen';  // Import the new screen
+import { useDarkMode } from '../hooks/useDarkMode';
+import { getColors } from '../constants/Colors';
+
 
 const SettingsScreen: React.FC = () => {
+  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+  const colors = getColors(isDark);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [dailyReminders, setDailyReminders] = useState(false);
-  const [showTimerSettings, setShowTimerSettings] = useState(false);  // State for modal
+  const [useSystemTheme, setUseSystemTheme] = useState(true);
+
 
   useEffect(() => {
+        loadThemeSettings();
     loadNotificationSettings();
   }, []);
+
+const loadThemeSettings = async () => {
+    try {
+      const savedUseSystemTheme = await loadData('useSystemTheme');
+      if (savedUseSystemTheme !== null) {
+        setUseSystemTheme(savedUseSystemTheme);
+      }
+    } catch (error) {
+      console.error('Error loading theme settings:', error);
+    }
+  };
 
   const loadNotificationSettings = async () => {
     try {
@@ -35,6 +52,19 @@ const SettingsScreen: React.FC = () => {
       setDailyReminders(hasPermission);
     } catch (error) {
       console.error('Error loading notification settings:', error);
+    }
+  };
+
+const handleSystemThemeToggle = async (value: boolean) => {
+    setUseSystemTheme(value);
+    try {
+      await saveData('useSystemTheme', value);
+      if (value) {
+        // When enabling system theme, we should sync with system
+        // This would require additional implementation
+      }
+    } catch (error) {
+      console.error('Error saving system theme preference:', error);
     }
   };
 
@@ -125,26 +155,46 @@ const SettingsScreen: React.FC = () => {
           </TouchableOpacity>
         </View>
 
-        {/* NEW: Timer Settings Link */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Timer</Text>
-          
-          <TouchableOpacity 
-            style={styles.settingItem}
-            onPress={() => setShowTimerSettings(true)}
-          >
-            <View style={styles.settingInfo}>
-              <Ionicons name="timer" size={24} color="#4361ee" />
-              <View style={styles.settingText}>
-                <Text style={styles.settingLabel}>Timer Settings</Text>
-                <Text style={styles.settingDescription}>
-                  Customize your focus and break durations
-                </Text>
-              </View>
+        <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
+        
+        <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
+          <View style={styles.settingInfo}>
+            <Ionicons name="phone-portrait" size={24} color={colors.primary} />
+            <View style={styles.settingText}>
+              <Text style={[styles.settingLabel, { color: colors.text }]}>Use System Theme</Text>
+              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                Automatically match system light/dark mode
+              </Text>
             </View>
-            <Ionicons name="chevron-forward" size={24} color="#ccc" />
-          </TouchableOpacity>
+          </View>
+          <Switch
+            value={useSystemTheme}
+            onValueChange={handleSystemThemeToggle}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={useSystemTheme ? colors.primary : '#f4f3f4'}
+          />
         </View>
+
+        <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
+          <View style={styles.settingInfo}>
+            <Ionicons name="moon" size={24} color={colors.primary} />
+            <View style={styles.settingText}>
+              <Text style={[styles.settingLabel, { color: colors.text }]}>Dark Mode</Text>
+              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                Switch between light and dark themes
+              </Text>
+            </View>
+          </View>
+          <Switch
+            value={isDark}
+            onValueChange={toggleDarkMode}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={isDark ? colors.primary : '#f4f3f4'}
+            disabled={useSystemTheme}
+          />
+        </View>
+      </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>About</Text>
@@ -168,20 +218,7 @@ const SettingsScreen: React.FC = () => {
       </ScrollView>
 
       {/* MODAL GOES HERE - Outside the ScrollView but inside the component */}
-      <Modal
-        animationType="slide"
-        visible={showTimerSettings}
-        onRequestClose={() => setShowTimerSettings(false)}
-      >
-        <TimerSettingsScreen />
-        <TouchableOpacity 
-          style={styles.closeModalButton}
-          onPress={() => setShowTimerSettings(false)}
-        >
-          <Ionicons name="close" size={24} color="#333" />
-          <Text style={styles.closeModalText}>Close</Text>
-        </TouchableOpacity>
-      </Modal>
+      
     </>
   );
 };

@@ -114,7 +114,8 @@ export const useTimer = () => {
     pauseTimer,
     resetTimer,
     skipTimer,
-    setTimerState,
-    setTimeLeft
+    // Remove these if they're not needed in TimerScreen
+    // setTimerState, 
+    // setTimeLeft
   };
 };

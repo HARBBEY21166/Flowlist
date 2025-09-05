@@ -54,42 +54,34 @@ export default function App() {
   }, []);
 
   return (
-     <SettingsProvider>
-    <DataProvider>
-      <NavigationContainer>
-        <Tab.Navigator
-          screenOptions={({ route }) => ({
-            tabBarIcon: ({ focused, color, size }) => {
-              let iconName: keyof typeof Ionicons.glyphMap = 'home';
+  <DataProvider>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName: keyof typeof Ionicons.glyphMap = 'home';
 
-              if (route.name === 'Home') {
-                iconName = focused ? 'home' : 'home-outline';
-              } else if (route.name === 'Timer') {
-                iconName = focused ? 'timer' : 'timer-outline';
-              } else if (route.name === 'Analytics') {
-                iconName = focused ? 'stats-chart' : 'stats-chart-outline';
-              } else if (route.name === 'Settings') {
-                iconName = focused ? 'settings' : 'settings-outline';
-              }
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Timer') {
+              iconName = focused ? 'timer' : 'timer-outline';
+            } else if (route.name === 'Analytics') {
+              iconName = focused ? 'stats-chart' : 'stats-chart-outline';
+            } else if (route.name === 'Settings') {
+              iconName = focused ? 'settings' : 'settings-outline';
+            }
 
-              return <Ionicons name={iconName} size={size} color={color} />;
-            },
-            tabBarActiveTintColor: '#4361ee',
-            tabBarInactiveTintColor: 'gray',
-          })}
-        >
-          <Tab.Screen name="Home" component={HomeScreen} />
-          <Tab.Screen name="Timer" component={TimerScreen} />
-          <Tab.Screen name="Analytics" component={AnalyticsScreen} />
-          <Tab.Screen name="Settings" component={SettingsScreen} />
-        </Tab.Navigator>
-      </NavigationContainer>
-      
-      <MoodCheckScreen
-        visible={showMoodCheck}
-        onClose={() => setShowMoodCheck(false)}
-      />
-    </DataProvider>
-     </SettingsProvider>
-  );
-}
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+          tabBarActiveTintColor: '#4361ee',
+          tabBarInactiveTintColor: 'gray',
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeScreen} />
+        <Tab.Screen name="Timer" component={TimerScreen} />
+        <Tab.Screen name="Analytics" component={AnalyticsScreen} />
+        <Tab.Screen name="Settings" component={SettingsScreen} />
+      </Tab.Navigator>
+    </NavigationContainer>
+  </DataProvider>
+)};

@@ -8,33 +8,86 @@ import {
   AppState,
   AppStateStatus,
   ScrollView,
+  TextInput,
+  Modal,
   Alert
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
-import { useTimer } from '../hooks/useTimer';
 import { TimerState } from '../types';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
-import { useIsFocused } from '@react-navigation/native';
-import { loadData } from '../utils/storage'; // Add this import
+import { saveData, loadData } from '../utils/storage';
+
+
+// Define interfaces
+interface TimerDurations {
+  work: number;
+  shortBreak: number;
+  longBreak: number;
+}
+
+interface TimerSettings {
+  durations: TimerDurations;
+  longBreakInterval: number;
+}
+
+// Default timer durations
+const DEFAULT_DURATIONS: TimerDurations = {
+  work: 25,
+  shortBreak: 5,
+  longBreak: 15
+};
 
 const TimerScreen: React.FC = () => {
   const { tasks, activeTaskId, setActiveTask } = useData();
-  const {
-    timeLeft,
-    timerState,
-    sessionCount,
-    longBreakInterval,
-    startTimer,
-    pauseTimer,
-    resetTimer,
-    skipTimer,
-    setTimerState,
-    setTimeLeft
-  } = useTimer();
-  
+  const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATIONS.work * 60);
+  const [timerState, setTimerState] = useState<TimerState>(TimerState.STOPPED);
+  const [sessionCount, setSessionCount] = useState(0);
   const [appState, setAppState] = useState(AppState.currentState);
-  const isFocused = useIsFocused();
+  const [showSettings, setShowSettings] = useState(false);
+  const [durations, setDurations] = useState<TimerDurations>(DEFAULT_DURATIONS);
+  const [longBreakInterval, setLongBreakInterval] = useState<number>(4);
+
+  // Load saved settings
+  useEffect(() => {
+    loadTimerSettings();
+  }, []);
+
+  const loadTimerSettings = async (): Promise<void> => {
+    try {
+      const savedSettings = await loadData<TimerSettings>('timerSettings');
+      if (savedSettings) {
+        setDurations(savedSettings.durations || DEFAULT_DURATIONS);
+        setLongBreakInterval(savedSettings.longBreakInterval || 4);
+        // Update current time if timer is running
+        if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
+          setTimeLeft(getDuration(timerState, savedSettings.durations));
+        }
+      }
+    } catch (error) {
+      console.error('Error loading timer settings:', error);
+    }
+  };
+
+  const saveTimerSettings = async (): Promise<void> => {
+    try {
+      const settings: TimerSettings = {
+        durations,
+        longBreakInterval
+      };
+      await saveData('timerSettings', settings);
+      Alert.alert('Success', 'Timer settings saved!');
+      setShowSettings(false);
+      
+      // Update current timer if needed
+      if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
+        setTimeLeft(getDuration(timerState, durations));
+      }
+    } catch (error) {
+      console.error('Error saving timer settings:', error);
+      Alert.alert('Error', 'Failed to save settings');
+    }
+  };
 
   // Format time for display (MM:SS)
   const formatTime = (seconds: number): string => {
@@ -54,38 +107,29 @@ const TimerScreen: React.FC = () => {
     }
   };
 
+  // Get duration based on timer state
+  const getDuration = (state: TimerState, customDurations?: TimerDurations): number => {
+    const durationsToUse = customDurations || durations;
+    switch (state) {
+      case TimerState.WORK: return durationsToUse.work * 60;
+      case TimerState.SHORT_BREAK: return durationsToUse.shortBreak * 60;
+      case TimerState.LONG_BREAK: return durationsToUse.longBreak * 60;
+      default: return durationsToUse.work * 60;
+    }
+  };
+
   // Get background color based on timer state
   const getBackgroundColor = (): string => {
     switch (timerState) {
-      case TimerState.WORK: return '#FF5252'; // Red for focus
-      case TimerState.SHORT_BREAK: return '#4CAF50'; // Green for short break
-      case TimerState.LONG_BREAK: return '#2196F3'; // Blue for long break
-      case TimerState.PAUSED: return '#FF9800'; // Orange for paused
-      default: return '#9E9E9E'; // Gray for stopped
+      case TimerState.WORK: return '#FF5252';
+      case TimerState.SHORT_BREAK: return '#4CAF50';
+      case TimerState.LONG_BREAK: return '#2196F3';
+      case TimerState.PAUSED: return '#FF9800';
+      default: return '#9E9E9E';
     }
   };
 
-  // Get duration based on timer state and settings
-  const getDuration = (state: TimerState, settings?: any): number => {
-    if (!settings) {
-      // Default durations if no settings
-      switch (state) {
-        case TimerState.WORK: return 25 * 60;
-        case TimerState.SHORT_BREAK: return 5 * 60;
-        case TimerState.LONG_BREAK: return 15 * 60;
-        default: return 25 * 60;
-      }
-    }
-    
-    switch (state) {
-      case TimerState.WORK: return (settings.workDuration || 25) * 60;
-      case TimerState.SHORT_BREAK: return (settings.shortBreakDuration || 5) * 60;
-      case TimerState.LONG_BREAK: return (settings.longBreakDuration || 15) * 60;
-      default: return 25 * 60;
-    }
-  };
-
-  // Handle app state changes (background/foreground)
+  // Handle app state changes
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
       setAppState(nextAppState);
@@ -96,8 +140,6 @@ const TimerScreen: React.FC = () => {
     };
   }, []);
 
-  
-
   // Handle timer completion
   useEffect(() => {
     if (timeLeft === 0 && timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
@@ -105,17 +147,35 @@ const TimerScreen: React.FC = () => {
     }
   }, [timeLeft, timerState]);
 
+
+  // Timer effect - This is what makes the countdown work
+useEffect(() => {
+  let interval: NodeJS.Timeout | null = null;
+  
+  if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
+    interval = setInterval(() => {
+      setTimeLeft(prevTime => {
+        if (prevTime <= 1) {
+          clearInterval(interval as NodeJS.Timeout);
+          return 0;
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+  }
+  
+  return () => {
+    if (interval) clearInterval(interval);
+  };
+}, [timerState]);
+
   const handleTimerComplete = async (): Promise<void> => {
-    // Vibrate when timer completes
     Vibration.vibrate([0, 500, 200, 500]);
     
-    // Send notification
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Timer Complete!",
-        body: timerState === TimerState.WORK 
-          ? "Time for a break!" 
-          : "Back to work!",
+        body: timerState === TimerState.WORK ? "Time for a break!" : "Back to work!",
         sound: true,
       },
       trigger: null,
@@ -125,45 +185,71 @@ const TimerScreen: React.FC = () => {
     let nextState: TimerState;
     if (timerState === TimerState.WORK) {
       const nextSessionCount = sessionCount + 1;
+      setSessionCount(nextSessionCount);
+      nextState = nextSessionCount % longBreakInterval === 0 
+        ? TimerState.LONG_BREAK 
+        : TimerState.SHORT_BREAK;
+    } else {
+      nextState = TimerState.WORK;
+    }
+
+    setTimerState(nextState);
+    setTimeLeft(getDuration(nextState));
+  };
+
+  const startTimer = (): void => {
+    if (timerState === TimerState.STOPPED) {
+      setTimerState(TimerState.WORK);
+      setTimeLeft(getDuration(TimerState.WORK));
+    } else if (timerState === TimerState.PAUSED) {
+      setTimerState(TimerState.WORK);
+    }
+  };
+
+  const pauseTimer = (): void => {
+    if ([TimerState.WORK, TimerState.SHORT_BREAK, TimerState.LONG_BREAK].includes(timerState)) {
+      setTimerState(TimerState.PAUSED);
+    }
+  };
+
+  const resetTimer = (): void => {
+    setTimerState(TimerState.STOPPED);
+    setTimeLeft(getDuration(TimerState.WORK));
+    setSessionCount(0);
+  };
+
+  const skipTimer = (): void => {
+    if (timerState === TimerState.WORK) {
+      const nextSessionCount = sessionCount + 1;
+      setSessionCount(nextSessionCount);
       const nextState = nextSessionCount % longBreakInterval === 0 
         ? TimerState.LONG_BREAK 
         : TimerState.SHORT_BREAK;
       setTimerState(nextState);
-      
-      // Load settings for the new duration
-      try {
-        const settings = await loadData('timerSettings');
-        setTimeLeft(getDuration(nextState, settings));
-      } catch (error) {
-        console.error('Error loading settings for next state:', error);
-        setTimeLeft(getDuration(nextState));
-      }
+      setTimeLeft(getDuration(nextState));
     } else {
       setTimerState(TimerState.WORK);
-      try {
-        const settings = await loadData('timerSettings');
-        setTimeLeft(getDuration(TimerState.WORK, settings));
-      } catch (error) {
-        console.error('Error loading settings for work state:', error);
-        setTimeLeft(getDuration(TimerState.WORK));
-      }
+      setTimeLeft(getDuration(TimerState.WORK));
     }
   };
 
   // Calculate progress percentage
   const getProgress = (): number => {
-    try {
-      const settings = {}; // We'll load this dynamically
-      const totalTime = getDuration(timerState, settings);
-      return (totalTime - timeLeft) / totalTime;
-    } catch (error) {
-      return 0;
-    }
+    const totalTime = getDuration(timerState);
+    return (totalTime - timeLeft) / totalTime;
   };
 
   return (
     <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
       <View style={styles.content}>
+        {/* Settings Button */}
+        <TouchableOpacity 
+          style={styles.settingsButton}
+          onPress={() => setShowSettings(true)}
+        >
+          <Ionicons name="settings" size={24} color="white" />
+        </TouchableOpacity>
+
         <Text style={styles.stateText}>{getTimerStateText()}</Text>
         
         <View style={styles.timerCircle}>
@@ -245,19 +331,126 @@ const TimerScreen: React.FC = () => {
           </ScrollView>
         </View>
       </View>
+
+      {/* Timer Settings Modal */}
+      {/* Timer Settings Modal */}
+<Modal
+  animationType="slide"
+  transparent={true}
+  visible={showSettings}
+  onRequestClose={() => setShowSettings(false)}
+>
+  <View style={styles.modalContainer}>
+    <View style={styles.modalContent}>
+      <View style={styles.modalHeader}>
+        <Text style={styles.modalTitle}>Timer Settings</Text>
+        <TouchableOpacity onPress={() => setShowSettings(false)}>
+          <Ionicons name="close" size={24} color="#333" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.settingsContainer}>
+        <View style={styles.settingGroup}>
+          <Text style={styles.settingLabel}>Work Duration (minutes)</Text>
+          <TextInput
+            style={styles.settingInput}
+            value={durations.work.toString()}
+            onChangeText={(text) => {
+              const value = parseInt(text) || 1;
+              setDurations({...durations, work: Math.min(Math.max(value, 1), 60)});
+            }}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.settingGroup}>
+          <Text style={styles.settingLabel}>Short Break (minutes)</Text>
+          <TextInput
+            style={styles.settingInput}
+            value={durations.shortBreak.toString()}
+            onChangeText={(text) => {
+              const value = parseInt(text) || 1;
+              setDurations({...durations, shortBreak: Math.min(Math.max(value, 1), 30)});
+            }}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.settingGroup}>
+          <Text style={styles.settingLabel}>Long Break (minutes)</Text>
+          <TextInput
+            style={styles.settingInput}
+            value={durations.longBreak.toString()}
+            onChangeText={(text) => {
+              const value = parseInt(text) || 1;
+              setDurations({...durations, longBreak: Math.min(Math.max(value, 1), 60)});
+            }}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <View style={styles.settingGroup}>
+          <Text style={styles.settingLabel}>Long Break Interval</Text>
+          <Text style={styles.settingDescription}>
+            Number of focus sessions before a long break
+          </Text>
+          <TextInput
+            style={styles.settingInput}
+            value={longBreakInterval.toString()}
+            onChangeText={(text) => {
+              const value = parseInt(text) || 1;
+              setLongBreakInterval(Math.min(Math.max(value, 1), 10));
+            }}
+            keyboardType="numeric"
+          />
+        </View>
+
+        <TouchableOpacity style={styles.saveButton} onPress={saveTimerSettings}>
+          <Text style={styles.saveButtonText}>Save Settings</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.resetButton} 
+          onPress={() => {
+            setDurations(DEFAULT_DURATIONS);
+            setLongBreakInterval(4);
+          }}
+        >
+          <Text style={styles.resetButtonText}>Reset to Defaults</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+   container: {
     flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 16,
+    color: '#333',
   },
   content: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
   },
   stateText: {
     fontSize: 28,
@@ -362,6 +555,83 @@ const styles = StyleSheet.create({
     color: '#666',
     fontStyle: 'italic',
   },
+  // Modal styles
+  // Replace the modalContainer and modalContent styles:
+// Modal styles
+// Alternative modal styles for full-screen
+modalContainer: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+},
+modalContent: {
+  backgroundColor: 'white',
+  margin: 20,
+  borderRadius: 20,
+  padding: 20,
+  flex: 1,
+},
+modalHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 20,
+  borderBottomWidth: 1,
+  borderBottomColor: '#eee',
+  paddingBottom: 15,
+},
+modalTitle: {
+  fontSize: 20,
+  fontWeight: 'bold',
+},
+settingsContainer: {
+  flex: 1,
+},
+settingGroup: {
+  marginBottom: 20,
+},
+settingLabel: {
+  fontSize: 16,
+  fontWeight: '600',
+  marginBottom: 5,
+  color: '#333',
+},
+settingDescription: {
+  fontSize: 14,
+  color: '#666',
+  marginBottom: 10,
+},
+settingInput: {
+  borderWidth: 1,
+  borderColor: '#ddd',
+  borderRadius: 8,
+  padding: 12,
+  fontSize: 16,
+  backgroundColor: '#f9f9f9',
+},
+saveButton: {
+  backgroundColor: '#4361ee',
+  padding: 16,
+  borderRadius: 8,
+  alignItems: 'center',
+  marginBottom: 12,
+},
+saveButtonText: {
+  color: 'white',
+  fontWeight: 'bold',
+  fontSize: 16,
+},
+resetButton: {
+  backgroundColor: '#f8f9fa',
+  padding: 16,
+  borderRadius: 8,
+  alignItems: 'center',
+  borderWidth: 1,
+  borderColor: '#ddd',
+},
+resetButtonText: {
+  color: '#666',
+  fontWeight: 'bold',
+},
 });
 
 export default TimerScreen;

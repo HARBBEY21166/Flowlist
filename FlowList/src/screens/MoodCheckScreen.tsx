@@ -11,6 +11,9 @@ import { useData } from '../contexts/DataContext';
 import { Mood } from '../types';
 import { MOODS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
+// Add TextInput import at the top
+import { TextInput } from 'react-native';
+
 
 interface MoodCheckScreenProps {
   visible: boolean;
@@ -105,22 +108,17 @@ const MoodCheckScreen: React.FC<MoodCheckScreenProps> = ({ visible, onClose }) =
   );
 };
 
-// Add TextInput import at the top
-import { TextInput } from 'react-native';
-
 const styles = StyleSheet.create({
-  container: {
+   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#f5f5f5',
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
-    backgroundColor: 'white',
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 16,
+    color: '#333',
   },
   closeButton: {
     width: 40,

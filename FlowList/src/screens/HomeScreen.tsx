@@ -14,8 +14,13 @@ import { useData } from '../contexts/DataContext';
 import TaskItem from '../components/TaskItem';
 import { PRIORITIES } from '../utils/constants';
 import { Task } from '../types';
+import { useDarkMode } from '../hooks/useDarkMode';
+import { getColors } from '../constants/Colors';
+
 
 const HomeScreen: React.FC = () => {
+  const { isDark } = useDarkMode();
+  const colors = getColors(isDark);
   const { tasks, addTask } = useData();
   const [modalVisible, setModalVisible] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -45,9 +50,9 @@ const HomeScreen: React.FC = () => {
   const renderTask = ({ item }: { item: Task }) => <TaskItem task={item} />;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>My Tasks</Text>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <View style={[styles.header, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>My Tasks</Text>
         <TouchableOpacity
           style={styles.addButton}
           onPress={() => setModalVisible(true)}
@@ -136,7 +141,6 @@ const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',

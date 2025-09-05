@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import MoodHistory from '../components/MoodHistory';
 import MoodAnalytics from '../components/MoodAnalytics';
 
+
 const AnalyticsScreen: React.FC = () => {
   return (
     <ScrollView style={styles.container}>
@@ -26,7 +27,7 @@ const AnalyticsScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
