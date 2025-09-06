@@ -16,22 +16,19 @@ import {
   sendMoodNotification
 } from '../utils/notifications';
 import { Ionicons } from '@expo/vector-icons';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../contexts/ThemeContext';
 import { getColors } from '../constants/Colors';
 import { saveData, loadData } from '../utils/storage'; // Add this import
 
 const SettingsScreen: React.FC = () => {
-  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+  const { isDark, toggleTheme} = useTheme();
   const colors = getColors(isDark);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [dailyReminders, setDailyReminders] = useState(false);
-  const [useSystemTheme, setUseSystemTheme] = useState(true);
-
 
   useEffect(() => {
     loadNotificationSettings();
   }, []);
-
 
   const loadNotificationSettings = async () => {
     try {
@@ -43,18 +40,6 @@ const SettingsScreen: React.FC = () => {
     }
   };
 
-const handleSystemThemeToggle = async (value: boolean) => {
-    setUseSystemTheme(value);
-    try {
-      await saveData('useSystemTheme', value);
-      if (value) {
-        // When enabling system theme, we should sync with system
-        // This would require additional implementation
-      }
-    } catch (error) {
-      console.error('Error saving system theme preference:', error);
-    }
-  };
 
   const handleNotificationsToggle = async (value: boolean) => {
     try {
@@ -148,24 +133,6 @@ const handleSystemThemeToggle = async (value: boolean) => {
         
         <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
           <View style={styles.settingInfo}>
-            <Ionicons name="phone-portrait" size={24} color={colors.primary} />
-            <View style={styles.settingText}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Use System Theme</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                Automatically match system light/dark mode
-              </Text>
-            </View>
-          </View>
-          <Switch
-            value={useSystemTheme}
-            onValueChange={handleSystemThemeToggle}
-             trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
-          />
-        </View>
-
-        <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
-          <View style={styles.settingInfo}>
             <Ionicons name="moon" size={24} color={colors.primary} />
             <View style={styles.settingText}>
               <Text style={[styles.settingLabel, { color: colors.text }]}>Dark Mode</Text>
@@ -176,10 +143,10 @@ const handleSystemThemeToggle = async (value: boolean) => {
           </View>
           <Switch
             value={isDark}
-            onValueChange={toggleDarkMode}
+            onValueChange={toggleTheme}
              trackColor={{ false: '#767577', true: '#81b0ff' }}
               thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
-            disabled={useSystemTheme}
+            
           />
         </View>
       </View>

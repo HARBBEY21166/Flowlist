@@ -2,12 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import MoodHistory from '../components/MoodHistory';
 import MoodAnalytics from '../components/MoodAnalytics';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../contexts/ThemeContext';
 import { getColors } from '../constants/Colors';
 
 
 const AnalyticsScreen: React.FC = () => {
-  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+  const { isDark, toggleTheme} = useTheme();
     const colors = getColors(isDark);
   return (
 <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>

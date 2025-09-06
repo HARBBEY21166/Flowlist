@@ -14,12 +14,12 @@ import { useData } from '../contexts/DataContext';
 import TaskItem from '../components/TaskItem';
 import { PRIORITIES } from '../utils/constants';
 import { Task } from '../types';
-import { useDarkMode } from '../hooks/useDarkMode';
 import { getColors } from '../constants/Colors';
+import { useThemeSafe } from '../contexts/ThemeContext';
 
 
 const HomeScreen: React.FC = () => {
-  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+  const { isDark } = useThemeSafe();
     const colors = getColors(isDark);
   const { tasks, addTask } = useData();
   const [modalVisible, setModalVisible] = useState(false);
@@ -80,7 +80,7 @@ const HomeScreen: React.FC = () => {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Task</Text>
+            <Text style={styles.modalTitle}>Add New Tasks</Text>
             
             <TextInput
               style={styles.input}
