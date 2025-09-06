@@ -17,7 +17,8 @@ import { TimerState } from '../types';
 import * as Notifications from 'expo-notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { saveData, loadData } from '../utils/storage';
-
+import { getColors } from '../constants/Colors';
+import { useDarkMode } from '../hooks/useDarkMode';
 
 // Define interfaces
 interface TimerDurations {
@@ -39,6 +40,8 @@ const DEFAULT_DURATIONS: TimerDurations = {
 };
 
 const TimerScreen: React.FC = () => {
+  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+    const colors = getColors(isDark);
   const { tasks, activeTaskId, setActiveTask } = useData();
   const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATIONS.work * 60);
   const [timerState, setTimerState] = useState<TimerState>(TimerState.STOPPED);
@@ -240,7 +243,7 @@ useEffect(() => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         {/* Settings Button */}
         <TouchableOpacity 

@@ -7,7 +7,6 @@ import {
   ScrollView,
   Switch,
   Alert,
-  Modal  // Make sure to import Modal
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
 import { 
@@ -19,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useDarkMode } from '../hooks/useDarkMode';
 import { getColors } from '../constants/Colors';
-
+import { saveData, loadData } from '../utils/storage'; // Add this import
 
 const SettingsScreen: React.FC = () => {
   const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
@@ -30,20 +29,9 @@ const SettingsScreen: React.FC = () => {
 
 
   useEffect(() => {
-        loadThemeSettings();
     loadNotificationSettings();
   }, []);
 
-const loadThemeSettings = async () => {
-    try {
-      const savedUseSystemTheme = await loadData('useSystemTheme');
-      if (savedUseSystemTheme !== null) {
-        setUseSystemTheme(savedUseSystemTheme);
-      }
-    } catch (error) {
-      console.error('Error loading theme settings:', error);
-    }
-  };
 
   const loadNotificationSettings = async () => {
     try {
@@ -102,18 +90,18 @@ const handleSystemThemeToggle = async (value: boolean) => {
 
   return (
     <>
-      <ScrollView style={styles.container}>
-        <Text style={styles.header}>Settings</Text>
+<ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+<Text style={[styles.header, { color: colors.text }]}>Settings</Text>
         
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notifications</Text>
+        <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
           
-          <View style={styles.settingItem}>
+          <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
             <View style={styles.settingInfo}>
-              <Ionicons name="notifications" size={24} color="#4361ee" />
+              <Ionicons name="notifications" size={24} color={colors.primary} />
               <View style={styles.settingText}>
-                <Text style={styles.settingLabel}>Enable Notifications</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Enable Notifications</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                   Receive reminders and mood check-ins
                 </Text>
               </View>
@@ -126,12 +114,12 @@ const handleSystemThemeToggle = async (value: boolean) => {
             />
           </View>
 
-          <View style={styles.settingItem}>
+          <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
             <View style={styles.settingInfo}>
-              <Ionicons name="calendar" size={24} color="#4361ee" />
+              <Ionicons name="calendar" size={24} color={colors.primary}/>
               <View style={styles.settingText}>
-                <Text style={styles.settingLabel}>Daily Reminders</Text>
-                <Text style={styles.settingDescription}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Daily Reminders</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
                   8 PM mood check-in reminders
                 </Text>
               </View>
@@ -171,8 +159,8 @@ const handleSystemThemeToggle = async (value: boolean) => {
           <Switch
             value={useSystemTheme}
             onValueChange={handleSystemThemeToggle}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={useSystemTheme ? colors.primary : '#f4f3f4'}
+             trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
           />
         </View>
 
@@ -189,35 +177,34 @@ const handleSystemThemeToggle = async (value: boolean) => {
           <Switch
             value={isDark}
             onValueChange={toggleDarkMode}
-            trackColor={{ false: colors.border, true: colors.primary }}
-            thumbColor={isDark ? colors.primary : '#f4f3f4'}
+             trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
             disabled={useSystemTheme}
           />
         </View>
       </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          
-          <View style={styles.aboutItem}>
-            <Ionicons name="heart" size={24} color="#e74c3c" />
-            <View style={styles.aboutText}>
-              <Text style={styles.aboutLabel}>App Version</Text>
-              <Text style={styles.aboutValue}>1.0.0</Text>
-            </View>
-          </View>
-
-          <View style={styles.aboutItem}>
-            <Ionicons name="code-slash" size={24} color="#2c3e50" />
-            <View style={styles.aboutText}>
-              <Text style={styles.aboutLabel}>Built with</Text>
-              <Text style={styles.aboutValue}>React Native & Expo</Text>
-            </View>
-          </View>
-        </View>
+        <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+  <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+  
+  <View style={[styles.aboutItem, { borderBottomColor: colors.border }]}>
+    <Ionicons name="heart" size={24} color={colors.warning} />
+    <View style={styles.aboutText}>
+      <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>App Version</Text>
+      <Text style={[styles.aboutValue, { color: colors.text }]}>1.0.0</Text>
+    </View>
+  </View>
+  
+  <View style={[styles.aboutItem, { borderBottomColor: colors.border }]}>
+    <Ionicons name="code-slash" size={24} color={colors.textSecondary} />
+    <View style={styles.aboutText}>
+      <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Built with</Text>
+      <Text style={[styles.aboutValue, { color: colors.text }]}>React Native & Expo</Text>
+    </View>
+  </View>
+</View>
       </ScrollView>
 
-      {/* MODAL GOES HERE - Outside the ScrollView but inside the component */}
       
     </>
   );
@@ -227,27 +214,29 @@ const handleSystemThemeToggle = async (value: boolean) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: 16,
-    color: '#333',
   },
   section: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     margin: 16,
     marginBottom: 8,
+    borderWidth: 1,
+    shadowColor: '#fff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 16,
-    color: '#2c3e50',
   },
   settingItem: {
     flexDirection: 'row',
@@ -255,7 +244,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
   },
   settingInfo: {
     flexDirection: 'row',
@@ -269,11 +257,9 @@ const styles = StyleSheet.create({
   settingLabel: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#2c3e50',
   },
   settingDescription: {
     fontSize: 14,
-    color: '#7f8c8d',
     marginTop: 2,
   },
   testButton: {
@@ -286,7 +272,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   testButtonDisabled: {
-    backgroundColor: '#bdc3c7',
+    opacity: 0.5,
   },
   testButtonText: {
     color: 'white',
@@ -298,37 +284,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
   },
   aboutText: {
     marginLeft: 12,
   },
   aboutLabel: {
     fontSize: 14,
-    color: '#7f8c8d',
   },
   aboutValue: {
     fontSize: 16,
     fontWeight: '500',
-    color: '#2c3e50',
     marginTop: 2,
   },
-  // NEW STYLES FOR MODAL
-  closeModalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    backgroundColor: 'white',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  closeModalText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
-  },
+  
 });
 
 export default SettingsScreen;

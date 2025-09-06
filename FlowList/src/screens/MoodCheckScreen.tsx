@@ -13,6 +13,8 @@ import { MOODS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 // Add TextInput import at the top
 import { TextInput } from 'react-native';
+import { useDarkMode } from '../hooks/useDarkMode';
+import { getColors } from '../constants/Colors';
 
 
 interface MoodCheckScreenProps {
@@ -21,6 +23,8 @@ interface MoodCheckScreenProps {
 }
 
 const MoodCheckScreen: React.FC<MoodCheckScreenProps> = ({ visible, onClose }) => {
+  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+    const colors = getColors(isDark);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [note, setNote] = useState('');
   const { analytics, updateTask } = useData();
@@ -55,7 +59,7 @@ const MoodCheckScreen: React.FC<MoodCheckScreenProps> = ({ visible, onClose }) =
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <Ionicons name="close" size={24} color="#333" />

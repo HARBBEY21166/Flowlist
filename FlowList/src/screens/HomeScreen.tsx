@@ -19,8 +19,8 @@ import { getColors } from '../constants/Colors';
 
 
 const HomeScreen: React.FC = () => {
-  const { isDark } = useDarkMode();
-  const colors = getColors(isDark);
+  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+    const colors = getColors(isDark);
   const { tasks, addTask } = useData();
   const [modalVisible, setModalVisible] = useState(false);
   const [newTask, setNewTask] = useState({

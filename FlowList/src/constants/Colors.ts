@@ -15,7 +15,7 @@ export const DarkColors = {
   cardBackground: '#1e1e1e',
   text: '#e9ecef',
   textSecondary: '#adb5bd',
-  primary: '#4cc9f0',
+  primary: '#4361ee',
   border: '#343a40',
   success: '#38b000',
   warning: '#ffaa00',

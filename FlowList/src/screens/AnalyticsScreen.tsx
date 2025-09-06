@@ -2,11 +2,15 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import MoodHistory from '../components/MoodHistory';
 import MoodAnalytics from '../components/MoodAnalytics';
+import { useDarkMode } from '../hooks/useDarkMode';
+import { getColors } from '../constants/Colors';
 
 
 const AnalyticsScreen: React.FC = () => {
+  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+    const colors = getColors(isDark);
   return (
-    <ScrollView style={styles.container}>
+<ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={styles.header}>Productivity Analytics</Text>
       
       {/* Mood History */}
