@@ -79,31 +79,34 @@ const HomeScreen: React.FC = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Add New Tasks</Text>
+          <View style={[styles.modalContent, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Add New Tasks</Text>
             
             <TextInput
-              style={styles.input}
+              style={[styles.input, { color: colors.text }]}
               placeholder="Task title"
+                            placeholderTextColor={colors.textSecondary}
+
               value={newTask.title}
               onChangeText={text => setNewTask({...newTask, title: text})}
             />
             
             <TextInput
-              style={[styles.input, styles.textArea]}
+              style={[styles.input, styles.textArea, { color: colors.text }]}
               placeholder="Description (optional)"
+              placeholderTextColor={colors.textSecondary}
               multiline
               value={newTask.description}
               onChangeText={text => setNewTask({...newTask, description: text})}
             />
             
-            <Text style={styles.label}>Priority:</Text>
+            <Text style={[styles.label, { color: colors.text }]}>Priority:</Text>
             <View style={styles.priorityContainer}>
               {Object.entries(PRIORITIES).map(([key, value]) => (
                 <TouchableOpacity
                   key={key}
                   style={[
-                    styles.priorityButton,
+                    styles.priorityButton, 
                     newTask.priority === key.toLowerCase() && 
                     { backgroundColor: value.color }
                   ]}
@@ -112,7 +115,7 @@ const HomeScreen: React.FC = () => {
                     priority: key.toLowerCase() as 'low' | 'medium' | 'high'
                   })}
                 >
-                  <Text style={styles.priorityText}>{value.label}</Text>
+                  <Text style={[styles.priorityText, { color: colors.texttest }]}>{value.label}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -184,7 +187,6 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '90%',
-    backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
   },

@@ -12,12 +12,16 @@ import { Task } from '../types';
 import { Ionicons } from '@expo/vector-icons';
 import MoodSelector from './MoodSelector';
 import EditTaskModal from './EditTaskModal';
+import { getColors } from '../constants/Colors';
+import { useThemeSafe } from '../contexts/ThemeContext';
 
 interface TaskItemProps {
   task: Task;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
+  const { isDark } = useThemeSafe();
+const colors = getColors(isDark);
   const { updateTask, deleteTask } = useData();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoodSelector, setShowMoodSelector] = useState(false);
@@ -97,7 +101,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   return (
     <>
       <TouchableOpacity 
-        style={styles.container}
+        style={[styles.container, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
         onPress={() => setIsExpanded(!isExpanded)}
         activeOpacity={0.7}
       >
@@ -166,7 +170,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
   }} 
   style={styles.actionButton}
 >
-  <View style={styles.moodButtonContainer}>
+  <View style={styles.moodButtonContainer }>
     <Ionicons 
       name="color-palette" 
       size={24} 
@@ -237,6 +241,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
+    color: 'text',
   },
   completedTitle: {
     textDecorationLine: 'line-through',

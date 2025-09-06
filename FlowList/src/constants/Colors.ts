@@ -8,12 +8,15 @@ export const LightColors = {
   success: '#28a745',
   warning: '#ffc107',
   danger: '#dc3545',
+    texttest: '#212529',
+
 };
 
 export const DarkColors = {
   background: '#121212',
   cardBackground: '#1e1e1e',
   text: '#e9ecef',
+  texttest: '#212529',
   textSecondary: '#adb5bd',
   primary: '#4361ee',
   border: '#343a40',
