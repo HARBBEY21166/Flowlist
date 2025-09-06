@@ -13,7 +13,7 @@ import { MOODS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 // Add TextInput import at the top
 import { TextInput } from 'react-native';
-import { useDarkMode } from '../hooks/useDarkMode';
+import { useTheme } from '../contexts/ThemeContext';
 import { getColors } from '../constants/Colors';
 
 
@@ -23,7 +23,7 @@ interface MoodCheckScreenProps {
 }
 
 const MoodCheckScreen: React.FC<MoodCheckScreenProps> = ({ visible, onClose }) => {
-  const { isDark, toggleDarkMode, setDarkMode, isLoaded } = useDarkMode();
+  const { isDark, toggleTheme } = useTheme();
     const colors = getColors(isDark);
   const [selectedMood, setSelectedMood] = useState<Mood | null>(null);
   const [note, setNote] = useState('');
