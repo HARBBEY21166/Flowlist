@@ -9,6 +9,8 @@ import {
 } from 'react-native';
 import { Mood } from '../types';
 import { MOODS } from '../utils/constants';
+import { useTheme } from '../contexts/ThemeContext';
+import { getColors } from '../constants/Colors';
 
 interface MoodSelectorProps {
   visible: boolean;
@@ -23,6 +25,9 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
   onClose,
   selectedMood
 }) => {
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
+
   return (
     <Modal
       animationType="slide"
@@ -30,10 +35,12 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
       visible={visible}
       onRequestClose={onClose}
     >
-      <View style={styles.modalContainer}>
-        <View style={styles.modalContent}>
-          <Text style={styles.title}>How are you feeling?</Text>
-          <Text style={styles.subtitle}>Select your mood after completing this task</Text>
+      <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
+        <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+          <Text style={[styles.title, { color: colors.text }]}>How are you feeling?</Text>
+          <Text style={[styles.subtitle, { color: colors.textSecondary }]}>
+            Select your mood after completing this task
+          </Text>
           
           <ScrollView contentContainerStyle={styles.moodsContainer}>
             {MOODS.map((mood) => (
@@ -42,7 +49,7 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
                 style={[
                   styles.moodButton,
                   { backgroundColor: mood.color },
-                  selectedMood === mood.emoji && styles.selectedMood
+                  selectedMood === mood.emoji && [styles.selectedMood, { borderColor: colors.background }]
                 ]}
                 onPress={() => onMoodSelect(mood)}
               >
@@ -52,7 +59,10 @@ const MoodSelector: React.FC<MoodSelectorProps> = ({
             ))}
           </ScrollView>
           
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+          <TouchableOpacity 
+            style={[styles.closeButton, { backgroundColor: colors.primary }]} 
+            onPress={onClose}
+          >
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
@@ -66,11 +76,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
     width: '90%',
-    backgroundColor: 'white',
     borderRadius: 15,
     padding: 20,
     maxHeight: '80%',
@@ -85,7 +93,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
-    color: '#666',
   },
   moodsContainer: {
     flexDirection: 'row',
@@ -107,7 +114,6 @@ const styles = StyleSheet.create({
   },
   selectedMood: {
     borderWidth: 3,
-    borderColor: 'white',
     transform: [{ scale: 1.1 }],
   },
   moodEmoji: {
@@ -125,7 +131,6 @@ const styles = StyleSheet.create({
   closeButton: {
     marginTop: 20,
     padding: 12,
-    backgroundColor: '#4361ee',
     borderRadius: 8,
     alignItems: 'center',
   },

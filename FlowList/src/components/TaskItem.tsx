@@ -13,15 +13,15 @@ import { Ionicons } from '@expo/vector-icons';
 import MoodSelector from './MoodSelector';
 import EditTaskModal from './EditTaskModal';
 import { getColors } from '../constants/Colors';
-import { useThemeSafe } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface TaskItemProps {
   task: Task;
 }
 
 const TaskItem: React.FC<TaskItemProps> = ({ task }) => {
-  const { isDark } = useThemeSafe();
-const colors = getColors(isDark);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { updateTask, deleteTask } = useData();
   const [isExpanded, setIsExpanded] = useState(false);
   const [showMoodSelector, setShowMoodSelector] = useState(false);
@@ -101,7 +101,13 @@ const colors = getColors(isDark);
   return (
     <>
       <TouchableOpacity 
-        style={[styles.container, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}
+        style={[styles.container, { 
+          backgroundColor: colors.cardBackground, 
+          borderColor: colors.border,
+          shadowColor: isDark ? '#000' : '#000',
+          shadowOpacity: isDark ? 0.3 : 0.2,
+          elevation: isDark ? 3 : 2
+        }]}
         onPress={() => setIsExpanded(!isExpanded)}
         activeOpacity={0.7}
       >
@@ -109,17 +115,17 @@ const colors = getColors(isDark);
           <View style={[styles.priorityIndicator, { backgroundColor: priority.color }]} />
           
           <View style={styles.textContainer}>
-            <Text style={[styles.title, task.completed && styles.completedTitle]}>
+            <Text style={[styles.title, { color: colors.text }, task.completed && styles.completedTitle]}>
               {task.title}
             </Text>
             
             {isExpanded && task.description ? (
-              <Text style={styles.description}>{task.description}</Text>
+              <Text style={[styles.description, { color: colors.textSecondary }]}>{task.description}</Text>
             ) : null}
             
             {isExpanded && (
               <View style={styles.metaContainer}>
-                <Text style={styles.category}>{task.category}</Text>
+                <Text style={[styles.category, { color: colors.textSecondary }]}>{task.category}</Text>
                 <Text style={[styles.priority, { color: priority.color }]}>
                   {priority.label}
                 </Text>
@@ -128,7 +134,7 @@ const colors = getColors(isDark);
             
             {isExpanded && task.completed && task.mood && (
               <View style={styles.moodContainer}>
-                <Text style={styles.moodLabel}>Mood: </Text>
+                <Text style={[styles.moodLabel, { color: colors.textSecondary }]}>Mood: </Text>
                 <Text style={styles.moodEmoji}>{task.mood}</Text>
               </View>
             )}
@@ -148,44 +154,44 @@ const colors = getColors(isDark);
             </TouchableOpacity>
             
             <TouchableOpacity 
-  onPress={() => {
-    if (task.completed) {
-      handleEditMood();
-    } else {
-      Alert.alert(
-        "Mood Tracking", 
-        "Mood tracking is available after you complete a task. This helps you reflect on how you felt when finishing it.\n\nComplete the task first, then you can add or edit your mood!",
-        [
-          { 
-            text: "Complete Task", 
-            onPress: () => handleComplete() 
-          },
-          { 
-            text: "OK", 
-            style: "cancel" 
-          }
-        ]
-      );
-    }
-  }} 
-  style={styles.actionButton}
->
-  <View style={styles.moodButtonContainer }>
-    <Ionicons 
-      name="color-palette" 
-      size={24} 
-      color={task.completed ? "#9C27B0" : "#ccc"} 
-    />
-    {!task.completed && (
-      <Ionicons 
-        name="information-circle" 
-        size={12} 
-        color="#ccc" 
-        style={styles.infoIcon}
-      />
-    )}
-  </View>
-</TouchableOpacity>
+              onPress={() => {
+                if (task.completed) {
+                  handleEditMood();
+                } else {
+                  Alert.alert(
+                    "Mood Tracking", 
+                    "Mood tracking is available after you complete a task. This helps you reflect on how you felt when finishing it.\n\nComplete the task first, then you can add or edit your mood!",
+                    [
+                      { 
+                        text: "Complete Task", 
+                        onPress: () => handleComplete() 
+                      },
+                      { 
+                        text: "OK", 
+                        style: "cancel" 
+                      }
+                    ]
+                  );
+                }
+              }} 
+              style={styles.actionButton}
+            >
+              <View style={styles.moodButtonContainer}>
+                <Ionicons 
+                  name="color-palette" 
+                  size={24} 
+                  color={task.completed ? "#9C27B0" : colors.textSecondary} 
+                />
+                {!task.completed && (
+                  <Ionicons 
+                    name="information-circle" 
+                    size={12} 
+                    color={colors.textSecondary} 
+                    style={styles.infoIcon}
+                  />
+                )}
+              </View>
+            </TouchableOpacity>
             
             <TouchableOpacity onPress={handleDelete} style={styles.actionButton}>
               <Ionicons name="trash" size={24} color="#F44336" />
@@ -213,14 +219,10 @@ const colors = getColors(isDark);
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     marginHorizontal: 16,
     marginVertical: 8,
     borderRadius: 8,
-    elevation: 2,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
     shadowRadius: 1.5,
   },
   content: {
@@ -241,15 +243,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     marginBottom: 4,
-    color: 'text',
   },
   completedTitle: {
     textDecorationLine: 'line-through',
-    color: '#888',
   },
   description: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
   },
   metaContainer: {
@@ -259,7 +258,6 @@ const styles = StyleSheet.create({
   },
   category: {
     fontSize: 12,
-    color: '#888',
     fontStyle: 'italic',
   },
   priority: {
@@ -267,21 +265,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   moodContainer: {
-      position: 'relative',
+    position: 'relative',
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: 4,
-      justifyContent: 'center',
-
+    justifyContent: 'center',
   },
   infoIcon: {
-  position: 'absolute',
-  top: -2,
-  right: -2,
-},
+    position: 'absolute',
+    top: -2,
+    right: -2,
+  },
   moodLabel: {
     fontSize: 12,
-    color: '#666',
   },
   moodEmoji: {
     fontSize: 16,
@@ -291,6 +287,9 @@ const styles = StyleSheet.create({
   },
   actionButton: {
     marginLeft: 12,
+  },
+  moodButtonContainer: {
+    position: 'relative',
   },
 });
 
