@@ -15,12 +15,11 @@ import TaskItem from '../components/TaskItem';
 import { PRIORITIES } from '../utils/constants';
 import { Task } from '../types';
 import { getColors } from '../constants/Colors';
-import { useThemeSafe } from '../contexts/ThemeContext';
-
+import { useTheme } from '../contexts/ThemeContext';
 
 const HomeScreen: React.FC = () => {
-  const { isDark } = useThemeSafe();
-    const colors = getColors(isDark);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { tasks, addTask } = useData();
   const [modalVisible, setModalVisible] = useState(false);
   const [newTask, setNewTask] = useState({
@@ -51,10 +50,10 @@ const HomeScreen: React.FC = () => {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>My Tasks</Text>
+      <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
+        <Text style={[styles.title, { color: colors.text }]}>My Tasks</Text>
         <TouchableOpacity
-          style={styles.addButton}
+          style={[styles.addButton, { backgroundColor: colors.primary }]}
           onPress={() => setModalVisible(true)}
         >
           <Text style={styles.addButtonText}>+</Text>
@@ -65,9 +64,12 @@ const HomeScreen: React.FC = () => {
         data={tasks.filter(task => !task.completed)}
         renderItem={renderTask}
         keyExtractor={item => item.id}
+        contentContainerStyle={tasks.length === 0 && { flex: 1, justifyContent: 'center' }}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tasks yet. Add one to get started!</Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+              No tasks yet. Add one to get started!
+            </Text>
           </View>
         }
       />
@@ -78,21 +80,31 @@ const HomeScreen: React.FC = () => {
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={[styles.modalContent, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Add New Tasks</Text>
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+          <View style={[styles.modalContent, { 
+            backgroundColor: colors.cardBackground, 
+            borderColor: colors.border 
+          }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Add New Task</Text>
             
             <TextInput
-              style={[styles.input, { color: colors.text }]}
+              style={[styles.input, { 
+                color: colors.text, 
+                backgroundColor: colors.background,
+                borderColor: colors.border 
+              }]}
               placeholder="Task title"
-                            placeholderTextColor={colors.textSecondary}
-
+              placeholderTextColor={colors.textSecondary}
               value={newTask.title}
               onChangeText={text => setNewTask({...newTask, title: text})}
             />
             
             <TextInput
-              style={[styles.input, styles.textArea, { color: colors.text }]}
+              style={[styles.input, styles.textArea, { 
+                color: colors.text, 
+                backgroundColor: colors.background,
+                borderColor: colors.border 
+              }]}
               placeholder="Description (optional)"
               placeholderTextColor={colors.textSecondary}
               multiline
@@ -115,20 +127,22 @@ const HomeScreen: React.FC = () => {
                     priority: key.toLowerCase() as 'low' | 'medium' | 'high'
                   })}
                 >
-                  <Text style={[styles.priorityText, { color: colors.texttest }]}>{value.label}</Text>
+                  <Text style={[styles.priorityText, { color: colors.text }]}>
+                    {value.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <View style={styles.buttonRow}>
               <TouchableOpacity 
-                style={[styles.button, styles.cancelButton]}
+                style={[styles.button, styles.cancelButton, { backgroundColor: colors.border }]}
                 onPress={() => setModalVisible(false)}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={[styles.buttonText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.button, styles.addTaskButton]}
+                style={[styles.button, styles.addTaskButton, { backgroundColor: colors.primary }]}
                 onPress={handleAddTask}
               >
                 <Text style={styles.buttonText}>Add Task</Text>
@@ -150,9 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: 'white',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   title: {
     fontSize: 24,
@@ -162,7 +174,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#4361ee',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -174,21 +185,21 @@ const styles = StyleSheet.create({
   emptyContainer: {
     padding: 20,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   emptyText: {
     fontSize: 16,
-    color: '#888',
   },
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
     width: '90%',
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 20,
+    borderWidth: 1,
   },
   modalTitle: {
     fontSize: 20,
@@ -198,9 +209,8 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 5,
-    padding: 10,
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 15,
   },
   textArea: {
@@ -209,7 +219,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 8,
   },
   priorityContainer: {
     flexDirection: 'row',
@@ -220,12 +230,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
     padding: 10,
-    borderRadius: 5,
-    backgroundColor: '#eee',
+    borderRadius: 8,
     alignItems: 'center',
   },
   priorityText: {
-    color: 'white',
     fontWeight: 'bold',
   },
   buttonRow: {
@@ -236,7 +244,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
     padding: 12,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: 'center',
   },
   cancelButton: {

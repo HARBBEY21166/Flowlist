@@ -18,10 +18,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { getColors } from '../constants/Colors';
-import { saveData, loadData } from '../utils/storage'; // Add this import
+import { saveData, loadData } from '../utils/storage';
+import * as Notifications from 'expo-notifications';
+
+// Add the missing function
+const cancelScheduledNotifications = async (): Promise<void> => {
+  await Notifications.cancelAllScheduledNotificationsAsync();
+};
 
 const SettingsScreen: React.FC = () => {
-  const { isDark, toggleTheme} = useTheme();
+  const { isDark, toggleTheme } = useTheme();
   const colors = getColors(isDark);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [dailyReminders, setDailyReminders] = useState(false);
@@ -33,33 +39,58 @@ const SettingsScreen: React.FC = () => {
   const loadNotificationSettings = async () => {
     try {
       const hasPermission = await checkNotificationPermissions();
+      const savedDailyReminders = await loadData('dailyReminders');
+      
       setNotificationsEnabled(hasPermission);
-      setDailyReminders(hasPermission);
+      // Only enable daily reminders if we have permission AND it was previously enabled
+      setDailyReminders(hasPermission && (savedDailyReminders === true));
     } catch (error) {
       console.error('Error loading notification settings:', error);
     }
   };
-
 
   const handleNotificationsToggle = async (value: boolean) => {
     try {
       if (value) {
         const granted = await requestNotificationPermissions();
         setNotificationsEnabled(granted);
-        setDailyReminders(granted);
         
         if (granted) {
-          await scheduleDailyMoodCheck();
+          // Only schedule notifications if daily reminders should be enabled
+          if (dailyReminders) {
+            await scheduleDailyMoodCheck();
+          }
           Alert.alert('Success', 'Notifications enabled!');
+        } else {
+          Alert.alert('Permission Denied', 'Please enable notifications in your device settings');
         }
       } else {
         setNotificationsEnabled(false);
-        setDailyReminders(false);
+        await cancelScheduledNotifications();
+        await saveData('dailyReminders', false);
         Alert.alert('Notifications disabled', 'You will no longer receive reminders');
       }
     } catch (error) {
       console.error('Error toggling notifications:', error);
       Alert.alert('Error', 'Failed to update notification settings');
+    }
+  };
+
+  const handleDailyRemindersToggle = async (value: boolean) => {
+    try {
+      setDailyReminders(value);
+      await saveData('dailyReminders', value);
+      
+      if (value && notificationsEnabled) {
+        await scheduleDailyMoodCheck();
+        Alert.alert('Daily reminders enabled', 'You will receive daily mood check-ins at 8 PM');
+      } else {
+        await cancelScheduledNotifications();
+        Alert.alert('Daily reminders disabled', 'You will no longer receive daily mood check-ins');
+      }
+    } catch (error) {
+      console.error('Error toggling daily reminders:', error);
+      Alert.alert('Error', 'Failed to update daily reminders');
     }
   };
 
@@ -69,14 +100,14 @@ const SettingsScreen: React.FC = () => {
       Alert.alert('Test Notification', 'A test notification has been sent!');
     } catch (error) {
       console.error('Error sending test notification:', error);
-      Alert.alert('Error', 'Failed to send test notification');
+      Alert.alert('Error', 'Failed to send test notification. Make sure notifications are enabled.');
     }
   };
 
   return (
     <>
-<ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-<Text style={[styles.header, { color: colors.text }]}>Settings</Text>
+      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.header, { color: colors.text }]}>Settings</Text>
         
         <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
@@ -94,8 +125,8 @@ const SettingsScreen: React.FC = () => {
             <Switch
               value={notificationsEnabled}
               onValueChange={handleNotificationsToggle}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={notificationsEnabled ? colors.primary : '#f4f3f4'}
             />
           </View>
 
@@ -111,15 +142,15 @@ const SettingsScreen: React.FC = () => {
             </View>
             <Switch
               value={dailyReminders}
-              onValueChange={setDailyReminders}
-              trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={dailyReminders ? '#4361ee' : '#f4f3f4'}
+              onValueChange={handleDailyRemindersToggle}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={dailyReminders ? colors.primary : '#f4f3f4'}
               disabled={!notificationsEnabled}
             />
           </View>
 
           <TouchableOpacity 
-            style={[styles.testButton, !notificationsEnabled && styles.testButtonDisabled]}
+            style={[styles.testButton, { backgroundColor: colors.primary }, !notificationsEnabled && styles.testButtonDisabled]}
             onPress={testNotification}
             disabled={!notificationsEnabled}
           >
@@ -129,55 +160,51 @@ const SettingsScreen: React.FC = () => {
         </View>
 
         <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
-        
-        <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
-          <View style={styles.settingInfo}>
-            <Ionicons name="moon" size={24} color={colors.primary} />
-            <View style={styles.settingText}>
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Dark Mode</Text>
-              <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
-                Switch between light and dark themes
-              </Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Appearance</Text>
+          
+          <View style={[styles.settingItem, { borderBottomColor: colors.border }]}>
+            <View style={styles.settingInfo}>
+              <Ionicons name="moon" size={24} color={colors.primary} />
+              <View style={styles.settingText}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Dark Mode</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                  Switch between light and dark themes
+                </Text>
+              </View>
             </View>
+            <Switch
+              value={isDark}
+              onValueChange={toggleTheme}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={isDark ? colors.primary : '#f4f3f4'}
+            />
           </View>
-          <Switch
-            value={isDark}
-            onValueChange={toggleTheme}
-             trackColor={{ false: '#767577', true: '#81b0ff' }}
-              thumbColor={notificationsEnabled ? '#4361ee' : '#f4f3f4'}
-            
-          />
         </View>
-      </View>
 
         <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
-  <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
-  
-  <View style={[styles.aboutItem, { borderBottomColor: colors.border }]}>
-    <Ionicons name="heart" size={24} color={colors.warning} />
-    <View style={styles.aboutText}>
-      <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>App Version</Text>
-      <Text style={[styles.aboutValue, { color: colors.text }]}>1.0.0</Text>
-    </View>
-  </View>
-  
-  <View style={[styles.aboutItem, { borderBottomColor: colors.border }]}>
-    <Ionicons name="code-slash" size={24} color={colors.textSecondary} />
-    <View style={styles.aboutText}>
-      <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Built with</Text>
-      <Text style={[styles.aboutValue, { color: colors.text }]}>React Native & Expo</Text>
-    </View>
-  </View>
-</View>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>About</Text>
+          
+          <View style={[styles.aboutItem, { borderBottomColor: colors.border }]}>
+            <Ionicons name="heart" size={24} color={colors.warning} />
+            <View style={styles.aboutText}>
+              <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>App Version</Text>
+              <Text style={[styles.aboutValue, { color: colors.text }]}>1.0.0</Text>
+            </View>
+          </View>
+          
+          <View style={[styles.aboutItem, { borderBottomColor: colors.border }]}>
+            <Ionicons name="code-slash" size={24} color={colors.textSecondary} />
+            <View style={styles.aboutText}>
+              <Text style={[styles.aboutLabel, { color: colors.textSecondary }]}>Built with</Text>
+              <Text style={[styles.aboutValue, { color: colors.text }]}>React Native & Expo</Text>
+            </View>
+          </View>
+        </View>
       </ScrollView>
-
-      
     </>
   );
 };
 
-// Add these new styles to your existing StyleSheet
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -194,7 +221,7 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 8,
     borderWidth: 1,
-    shadowColor: '#fff',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
@@ -233,7 +260,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#4361ee',
     padding: 12,
     borderRadius: 8,
     marginTop: 16,
@@ -263,7 +289,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginTop: 2,
   },
-  
 });
 
 export default SettingsScreen;

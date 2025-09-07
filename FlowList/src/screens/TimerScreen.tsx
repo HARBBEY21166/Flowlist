@@ -40,8 +40,8 @@ const DEFAULT_DURATIONS: TimerDurations = {
 };
 
 const TimerScreen: React.FC = () => {
-  const { isDark, toggleTheme} = useTheme();
-    const colors = getColors(isDark);
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
   const { tasks, activeTaskId, setActiveTask } = useData();
   const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATIONS.work * 60);
   const [timerState, setTimerState] = useState<TimerState>(TimerState.STOPPED);
@@ -243,11 +243,11 @@ useEffect(() => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
       <View style={styles.content}>
         {/* Settings Button */}
         <TouchableOpacity 
-          style={styles.settingsButton}
+          style={[styles.settingsButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
           onPress={() => setShowSettings(true)}
         >
           <Ionicons name="settings" size={24} color="white" />
@@ -255,7 +255,7 @@ useEffect(() => {
 
         <Text style={styles.stateText}>{getTimerStateText()}</Text>
         
-        <View style={styles.timerCircle}>
+        <View style={[styles.timerCircle, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
           <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
           <View style={styles.progressBar}>
             <View 
@@ -280,166 +280,183 @@ useEffect(() => {
 
         <View style={styles.controls}>
           {(timerState === TimerState.PAUSED || timerState === TimerState.STOPPED) ? (
-            <TouchableOpacity style={styles.controlButton} onPress={startTimer}>
+            <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={startTimer}>
               <Ionicons name="play" size={24} color="white" />
               <Text style={styles.controlText}>Start</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={styles.controlButton} onPress={pauseTimer}>
+            <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={pauseTimer}>
               <Ionicons name="pause" size={24} color="white" />
               <Text style={styles.controlText}>Pause</Text>
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity style={styles.controlButton} onPress={resetTimer}>
+          <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={resetTimer}>
             <Ionicons name="refresh" size={24} color="white" />
             <Text style={styles.controlText}>Reset</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.controlButton} onPress={skipTimer}>
+          <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={skipTimer}>
             <Ionicons name="play-skip-forward" size={24} color="white" />
             <Text style={styles.controlText}>Skip</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.taskSelector}>
-          <Text style={styles.selectorTitle}>Select Task to Work On</Text>
+        <View style={[styles.taskSelector, { backgroundColor: isDark ? colors.cardBackground : 'rgba(255, 255, 255, 0.9)' }]}>
+          <Text style={[styles.selectorTitle, { color: colors.text }]}>Select Task to Work On</Text>
           <ScrollView style={styles.taskList}>
             {tasks.filter(task => !task.completed).map(task => (
               <TouchableOpacity
                 key={task.id}
                 style={[
                   styles.taskItem,
-                  activeTaskId === task.id && styles.activeTaskItem
+                  { borderBottomColor: colors.border },
+                  activeTaskId === task.id && [styles.activeTaskItem, { backgroundColor: isDark ? '#2D3748' : '#E8F5E9' }]
                 ]}
                 onPress={() => setActiveTask(task.id)}
               >
                 <Text
                   style={[
                     styles.taskText,
-                    activeTaskId === task.id && styles.activeTaskText
+                    { color: colors.text },
+                    activeTaskId === task.id && [styles.activeTaskText, { color: isDark ? '#68D391' : '#2E7D32' }]
                   ]}
                   numberOfLines={1}
                 >
                   {task.title}
                 </Text>
                 {activeTaskId === task.id && (
-                  <Ionicons name="checkmark" size={20} color="#4CAF50" />
+                  <Ionicons name="checkmark" size={20} color={isDark ? '#68D391' : '#4CAF50'} />
                 )}
               </TouchableOpacity>
             ))}
             {tasks.filter(task => !task.completed).length === 0 && (
-              <Text style={styles.noTasksText}>No tasks available. Add some tasks first!</Text>
+              <Text style={[styles.noTasksText, { color: colors.textSecondary }]}>
+                No tasks available. Add some tasks first!
+              </Text>
             )}
           </ScrollView>
         </View>
       </View>
 
       {/* Timer Settings Modal */}
-      {/* Timer Settings Modal */}
-<Modal
-  animationType="slide"
-  transparent={true}
-  visible={showSettings}
-  onRequestClose={() => setShowSettings(false)}
->
-  <View style={styles.modalContainer}>
-    <View style={styles.modalContent}>
-      <View style={styles.modalHeader}>
-        <Text style={styles.modalTitle}>Timer Settings</Text>
-        <TouchableOpacity onPress={() => setShowSettings(false)}>
-          <Ionicons name="close" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showSettings}
+        onRequestClose={() => setShowSettings(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: 'rgba(0, 0, 0, 0.7)' }]}>
+          <View style={[styles.modalContent, { backgroundColor: colors.cardBackground }]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>Timer Settings</Text>
+              <TouchableOpacity onPress={() => setShowSettings(false)}>
+                <Ionicons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
 
-      <View style={styles.settingsContainer}>
-        <View style={styles.settingGroup}>
-          <Text style={styles.settingLabel}>Work Duration (minutes)</Text>
-          <TextInput
-            style={styles.settingInput}
-            value={durations.work.toString()}
-            onChangeText={(text) => {
-              const value = parseInt(text) || 1;
-              setDurations({...durations, work: Math.min(Math.max(value, 1), 60)});
-            }}
-            keyboardType="numeric"
-          />
+            <View style={styles.settingsContainer}>
+              <View style={styles.settingGroup}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Work Duration (minutes)</Text>
+                <TextInput
+                  style={[styles.settingInput, { 
+                    color: colors.text, 
+                    backgroundColor: colors.background,
+                    borderColor: colors.border 
+                  }]}
+                  value={durations.work.toString()}
+                  onChangeText={(text) => {
+                    const value = parseInt(text) || 1;
+                    setDurations({...durations, work: Math.min(Math.max(value, 1), 60)});
+                  }}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.settingGroup}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Short Break (minutes)</Text>
+                <TextInput
+                  style={[styles.settingInput, { 
+                    color: colors.text, 
+                    backgroundColor: colors.background,
+                    borderColor: colors.border 
+                  }]}
+                  value={durations.shortBreak.toString()}
+                  onChangeText={(text) => {
+                    const value = parseInt(text) || 1;
+                    setDurations({...durations, shortBreak: Math.min(Math.max(value, 1), 30)});
+                  }}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.settingGroup}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Long Break (minutes)</Text>
+                <TextInput
+                  style={[styles.settingInput, { 
+                    color: colors.text, 
+                    backgroundColor: colors.background,
+                    borderColor: colors.border 
+                  }]}
+                  value={durations.longBreak.toString()}
+                  onChangeText={(text) => {
+                    const value = parseInt(text) || 1;
+                    setDurations({...durations, longBreak: Math.min(Math.max(value, 1), 60)});
+                  }}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.settingGroup}>
+                <Text style={[styles.settingLabel, { color: colors.text }]}>Long Break Interval</Text>
+                <Text style={[styles.settingDescription, { color: colors.textSecondary }]}>
+                  Number of focus sessions before a long break
+                </Text>
+                <TextInput
+                  style={[styles.settingInput, { 
+                    color: colors.text, 
+                    backgroundColor: colors.background,
+                    borderColor: colors.border 
+                  }]}
+                  value={longBreakInterval.toString()}
+                  onChangeText={(text) => {
+                    const value = parseInt(text) || 1;
+                    setLongBreakInterval(Math.min(Math.max(value, 1), 10));
+                  }}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <TouchableOpacity 
+                style={[styles.saveButton, { backgroundColor: colors.primary }]} 
+                onPress={saveTimerSettings}
+              >
+                <Text style={styles.saveButtonText}>Save Settings</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={[styles.resetButton, { 
+                  backgroundColor: colors.background,
+                  borderColor: colors.border 
+                }]} 
+                onPress={() => {
+                  setDurations(DEFAULT_DURATIONS);
+                  setLongBreakInterval(4);
+                }}
+              >
+                <Text style={[styles.resetButtonText, { color: colors.text }]}>Reset to Defaults</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        <View style={styles.settingGroup}>
-          <Text style={styles.settingLabel}>Short Break (minutes)</Text>
-          <TextInput
-            style={styles.settingInput}
-            value={durations.shortBreak.toString()}
-            onChangeText={(text) => {
-              const value = parseInt(text) || 1;
-              setDurations({...durations, shortBreak: Math.min(Math.max(value, 1), 30)});
-            }}
-            keyboardType="numeric"
-          />
-        </View>
-
-        <View style={styles.settingGroup}>
-          <Text style={styles.settingLabel}>Long Break (minutes)</Text>
-          <TextInput
-            style={styles.settingInput}
-            value={durations.longBreak.toString()}
-            onChangeText={(text) => {
-              const value = parseInt(text) || 1;
-              setDurations({...durations, longBreak: Math.min(Math.max(value, 1), 60)});
-            }}
-            keyboardType="numeric"
-          />
-        </View>
-
-        <View style={styles.settingGroup}>
-          <Text style={styles.settingLabel}>Long Break Interval</Text>
-          <Text style={styles.settingDescription}>
-            Number of focus sessions before a long break
-          </Text>
-          <TextInput
-            style={styles.settingInput}
-            value={longBreakInterval.toString()}
-            onChangeText={(text) => {
-              const value = parseInt(text) || 1;
-              setLongBreakInterval(Math.min(Math.max(value, 1), 10));
-            }}
-            keyboardType="numeric"
-          />
-        </View>
-
-        <TouchableOpacity style={styles.saveButton} onPress={saveTimerSettings}>
-          <Text style={styles.saveButtonText}>Save Settings</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={styles.resetButton} 
-          onPress={() => {
-            setDurations(DEFAULT_DURATIONS);
-            setLongBreakInterval(4);
-          }}
-        >
-          <Text style={styles.resetButtonText}>Reset to Defaults</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </View>
-</Modal>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-   container: {
+  container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 16,
-    color: '#333',
   },
   content: {
     flex: 1,
@@ -452,7 +469,6 @@ const styles = StyleSheet.create({
     top: 16,
     right: 16,
     padding: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 20,
   },
   stateText: {
@@ -465,7 +481,6 @@ const styles = StyleSheet.create({
     width: 250,
     height: 250,
     borderRadius: 125,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 30,
@@ -505,7 +520,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   controlButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     paddingVertical: 15,
     paddingHorizontal: 20,
     borderRadius: 25,
@@ -519,7 +533,6 @@ const styles = StyleSheet.create({
   },
   taskSelector: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     borderRadius: 10,
     padding: 15,
     maxHeight: 200,
@@ -539,10 +552,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   activeTaskItem: {
-    backgroundColor: '#E8F5E9',
+    borderRadius: 5,
   },
   taskText: {
     flex: 1,
@@ -550,91 +562,79 @@ const styles = StyleSheet.create({
   },
   activeTaskText: {
     fontWeight: 'bold',
-    color: '#2E7D32',
   },
   noTasksText: {
     textAlign: 'center',
     padding: 10,
-    color: '#666',
     fontStyle: 'italic',
   },
   // Modal styles
-  // Replace the modalContainer and modalContent styles:
-// Modal styles
-// Alternative modal styles for full-screen
-modalContainer: {
-  flex: 1,
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
-},
-modalContent: {
-  backgroundColor: 'white',
-  margin: 20,
-  borderRadius: 20,
-  padding: 20,
-  flex: 1,
-},
-modalHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 20,
-  borderBottomWidth: 1,
-  borderBottomColor: '#eee',
-  paddingBottom: 15,
-},
-modalTitle: {
-  fontSize: 20,
-  fontWeight: 'bold',
-},
-settingsContainer: {
-  flex: 1,
-},
-settingGroup: {
-  marginBottom: 20,
-},
-settingLabel: {
-  fontSize: 16,
-  fontWeight: '600',
-  marginBottom: 5,
-  color: '#333',
-},
-settingDescription: {
-  fontSize: 14,
-  color: '#666',
-  marginBottom: 10,
-},
-settingInput: {
-  borderWidth: 1,
-  borderColor: '#ddd',
-  borderRadius: 8,
-  padding: 12,
-  fontSize: 16,
-  backgroundColor: '#f9f9f9',
-},
-saveButton: {
-  backgroundColor: '#4361ee',
-  padding: 16,
-  borderRadius: 8,
-  alignItems: 'center',
-  marginBottom: 12,
-},
-saveButtonText: {
-  color: 'white',
-  fontWeight: 'bold',
-  fontSize: 16,
-},
-resetButton: {
-  backgroundColor: '#f8f9fa',
-  padding: 16,
-  borderRadius: 8,
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: '#ddd',
-},
-resetButtonText: {
-  color: '#666',
-  fontWeight: 'bold',
-},
+  modalContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    margin: 20,
+    borderRadius: 20,
+    padding: 20,
+    flex: 1,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    paddingBottom: 15,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  settingsContainer: {
+    flex: 1,
+  },
+  settingGroup: {
+    marginBottom: 20,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  settingDescription: {
+    fontSize: 14,
+    marginBottom: 10,
+  },
+  settingInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  saveButton: {
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  resetButton: {
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+  },
+  resetButtonText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
 });
 
 export default TimerScreen;

@@ -3,9 +3,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useData } from '../contexts/DataContext';
 import { Mood } from '../types';
 import { MOODS } from '../utils/constants';
+import { useTheme } from '../contexts/ThemeContext';
+import { getColors } from '../constants/Colors';
 
 const MoodHistory: React.FC = () => {
   const { tasks } = useData();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // Get completed tasks with moods
   const completedTasksWithMoods = tasks.filter(task => task.completed && task.mood);
@@ -29,20 +33,29 @@ const MoodHistory: React.FC = () => {
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Mood History</Text>
+    <View style={[styles.container, { 
+      backgroundColor: colors.cardBackground,
+      shadowColor: isDark ? '#000' : '#000',
+      shadowOpacity: isDark ? 0.3 : 0.1,
+      elevation: isDark ? 4 : 2
+    }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Mood History</Text>
       
       {completedTasksWithMoods.length === 0 ? (
-        <Text style={styles.emptyText}>Complete tasks to track your moods!</Text>
+        <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+          Complete tasks to track your moods!
+        </Text>
       ) : (
         <>
           <View style={styles.summary}>
-            <Text style={styles.summaryText}>
+            <Text style={[styles.summaryText, { color: colors.textSecondary }]}>
               You've tracked your mood on {completedTasksWithMoods.length} tasks
             </Text>
             {mostCommonMood.count > 0 && (
               <View style={styles.commonMood}>
-                <Text style={styles.commonMoodText}>Most common mood: </Text>
+                <Text style={[styles.commonMoodText, { color: colors.textSecondary }]}>
+                  Most common mood:{' '}
+                </Text>
                 <Text style={styles.commonMoodEmoji}>{mostCommonMood.emoji}</Text>
               </View>
             )}
@@ -64,19 +77,23 @@ const MoodHistory: React.FC = () => {
                     ]}
                   />
                   <Text style={styles.moodLabel}>{mood.emoji}</Text>
-                  <Text style={styles.moodCount}>{moodCounts[mood.emoji]}</Text>
+                  <Text style={[styles.moodCount, { color: colors.textSecondary }]}>
+                    {moodCounts[mood.emoji]}
+                  </Text>
                 </View>
               ))}
             </View>
           </ScrollView>
 
-          <View style={styles.recentMoods}>
-            <Text style={styles.recentTitle}>Recent Moods:</Text>
+          <View style={[styles.recentMoods, { borderTopColor: colors.border }]}>
+            <Text style={[styles.recentTitle, { color: colors.text }]}>Recent Moods:</Text>
             <View style={styles.moodList}>
               {completedTasksWithMoods.slice(0, 5).map(task => (
-                <View key={task.id} style={styles.recentMoodItem}>
+                <View key={task.id} style={[styles.recentMoodItem, { 
+                  backgroundColor: isDark ? colors.background : '#f5f5f5' 
+                }]}>
                   <Text style={styles.recentMoodEmoji}>{task.mood}</Text>
-                  <Text style={styles.recentMoodTask} numberOfLines={1}>
+                  <Text style={[styles.recentMoodTask, { color: colors.textSecondary }]} numberOfLines={1}>
                     {task.title}
                   </Text>
                 </View>
@@ -91,25 +108,19 @@ const MoodHistory: React.FC = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     margin: 16,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 2,
   },
   title: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 12,
-    color: '#333',
   },
   emptyText: {
     textAlign: 'center',
-    color: '#666',
     fontStyle: 'italic',
     padding: 20,
   },
@@ -118,7 +129,6 @@ const styles = StyleSheet.create({
   },
   summaryText: {
     fontSize: 14,
-    color: '#555',
     marginBottom: 8,
   },
   commonMood: {
@@ -127,7 +137,6 @@ const styles = StyleSheet.create({
   },
   commonMoodText: {
     fontSize: 14,
-    color: '#555',
   },
   commonMoodEmoji: {
     fontSize: 18,
@@ -153,19 +162,16 @@ const styles = StyleSheet.create({
   },
   moodCount: {
     fontSize: 12,
-    color: '#666',
     marginTop: 4,
   },
   recentMoods: {
     borderTopWidth: 1,
-    borderTopColor: '#eee',
     paddingTop: 12,
   },
   recentTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
   },
   moodList: {
     flexDirection: 'row',
@@ -174,7 +180,6 @@ const styles = StyleSheet.create({
   recentMoodItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     borderRadius: 16,
     padding: 8,
     margin: 4,
@@ -185,7 +190,6 @@ const styles = StyleSheet.create({
   },
   recentMoodTask: {
     fontSize: 12,
-    color: '#666',
     maxWidth: 100,
   },
 });

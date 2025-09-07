@@ -1,15 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Dimensions } from 'react-native';
 import { useData } from '../contexts/DataContext';
-import Victory from 'victory-native';
 import { Mood } from '../types';
 import { MOODS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
+import { getColors } from '../constants/Colors';
 
 const { width } = Dimensions.get('window');
 
 const MoodAnalytics: React.FC = () => {
   const { tasks } = useData();
+  const { isDark } = useTheme();
+  const colors = getColors(isDark);
 
   // Get completed tasks with moods
   const completedTasksWithMoods = tasks.filter(task => task.completed && task.mood);
@@ -52,46 +55,48 @@ const MoodAnalytics: React.FC = () => {
   const mostCommonMoodEmoji = MOODS.find(m => m.name === mostCommonMood.x)?.emoji || '';
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Mood Analytics</Text>
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+      <Text style={[styles.title, { color: colors.text }]}>Mood Analytics</Text>
 
       {completedTasksWithMoods.length === 0 ? (
         <View style={styles.emptyState}>
-          <Ionicons name="stats-chart" size={64} color="#ccc" />
-          <Text style={styles.emptyText}>Complete tasks with mood tracking to see analytics</Text>
+          <Ionicons name="stats-chart" size={64} color={colors.textSecondary} />
+          <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+            Complete tasks with mood tracking to see analytics
+          </Text>
         </View>
       ) : (
         <>
           {/* Summary Cards */}
           <View style={styles.summaryContainer}>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryNumber}>{totalMoodEntries}</Text>
-              <Text style={styles.summaryLabel}>Moods Tracked</Text>
+            <View style={[styles.summaryCard, { backgroundColor: colors.cardBackground }]}>
+              <Text style={[styles.summaryNumber, { color: colors.text }]}>{totalMoodEntries}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Moods Tracked</Text>
             </View>
-            <View style={styles.summaryCard}>
+            <View style={[styles.summaryCard, { backgroundColor: colors.cardBackground }]}>
               <Text style={[styles.summaryNumber, { color: mostCommonMood.color }]}>
                 {mostCommonMoodEmoji}
               </Text>
-              <Text style={styles.summaryLabel}>Most Common</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Most Common</Text>
             </View>
-            <View style={styles.summaryCard}>
-              <Text style={styles.summaryNumber}>{moodData.length}</Text>
-              <Text style={styles.summaryLabel}>Unique Moods</Text>
+            <View style={[styles.summaryCard, { backgroundColor: colors.cardBackground }]}>
+              <Text style={[styles.summaryNumber, { color: colors.text }]}>{moodData.length}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>Unique Moods</Text>
             </View>
           </View>
 
           {/* Mood Distribution - Using a custom bar chart */}
           {chartData.length > 0 && (
-            <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>Mood Distribution</Text>
+            <View style={[styles.chartContainer, { backgroundColor: colors.cardBackground }]}>
+              <Text style={[styles.chartTitle, { color: colors.text }]}>Mood Distribution</Text>
               <View style={styles.barChart}>
                 {moodData.map((item, index) => (
                   <View key={index} style={styles.barContainer}>
                     <View style={styles.barLabelContainer}>
-                      <Text style={styles.barLabel}>{item.x}</Text>
-                      <Text style={styles.barCount}>{item.y}</Text>
+                      <Text style={[styles.barLabel, { color: colors.text }]}>{item.x}</Text>
+                      <Text style={[styles.barCount, { color: colors.textSecondary }]}>{item.y}</Text>
                     </View>
-                    <View style={styles.barBackground}>
+                    <View style={[styles.barBackground, { backgroundColor: isDark ? '#374151' : '#ecf0f1' }]}>
                       <View 
                         style={[
                           styles.barFill,
@@ -110,15 +115,15 @@ const MoodAnalytics: React.FC = () => {
 
           {/* Mood Proportions - Using a custom chart */}
           {moodData.length > 0 && (
-            <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>Mood Proportions</Text>
+            <View style={[styles.chartContainer, { backgroundColor: colors.cardBackground }]}>
+              <Text style={[styles.chartTitle, { color: colors.text }]}>Mood Proportions</Text>
               <View style={styles.pieChartContainer}>
                 {moodData.map((item, index) => {
                   const percentage = (item.y / totalMoodEntries) * 100;
                   return (
                     <View key={index} style={styles.pieItem}>
                       <View style={[styles.pieColor, { backgroundColor: item.color }]} />
-                      <Text style={styles.pieLabel}>
+                      <Text style={[styles.pieLabel, { color: colors.text }]}>
                         {item.x}: {Math.round(percentage)}% ({item.y})
                       </Text>
                     </View>
@@ -129,16 +134,19 @@ const MoodAnalytics: React.FC = () => {
           )}
 
           {/* Recent Moods */}
-          <View style={styles.recentContainer}>
-            <Text style={styles.sectionTitle}>Recent Moods</Text>
+          <View style={[styles.recentContainer, { backgroundColor: colors.cardBackground }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Moods</Text>
             {completedTasksWithMoods.slice(-5).reverse().map((task, index) => (
-              <View key={index} style={styles.recentMoodItem}>
+              <View key={index} style={[styles.recentMoodItem, { 
+                borderBottomColor: colors.border,
+                borderBottomWidth: index < 4 ? 1 : 0 
+              }]}>
                 <Text style={styles.recentMoodEmoji}>{task.mood}</Text>
                 <View style={styles.recentMoodInfo}>
-                  <Text style={styles.recentMoodTask} numberOfLines={1}>
+                  <Text style={[styles.recentMoodTask, { color: colors.text }]} numberOfLines={1}>
                     {task.title}
                   </Text>
-                  <Text style={styles.recentMoodDate}>
+                  <Text style={[styles.recentMoodDate, { color: colors.textSecondary }]}>
                     {new Date(task.completedAt!).toLocaleDateString()}
                   </Text>
                 </View>
@@ -154,14 +162,12 @@ const MoodAnalytics: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
     marginVertical: 16,
-    color: '#2c3e50',
   },
   emptyState: {
     alignItems: 'center',
@@ -170,7 +176,6 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
-    color: '#7f8c8d',
     marginTop: 16,
     fontSize: 16,
   },
@@ -181,7 +186,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   summaryCard: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     alignItems: 'center',
@@ -199,11 +203,9 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 12,
-    color: '#7f8c8d',
     textAlign: 'center',
   },
   chartContainer: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     margin: 16,
@@ -219,7 +221,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 16,
     textAlign: 'center',
-    color: '#2c3e50',
   },
   barChart: {
     marginTop: 10,
@@ -235,15 +236,12 @@ const styles = StyleSheet.create({
   barLabel: {
     fontSize: 12,
     fontWeight: '500',
-    color: '#2c3e50',
   },
   barCount: {
     fontSize: 12,
-    color: '#7f8c8d',
   },
   barBackground: {
     height: 20,
-    backgroundColor: '#ecf0f1',
     borderRadius: 10,
     overflow: 'hidden',
   },
@@ -267,10 +265,8 @@ const styles = StyleSheet.create({
   },
   pieLabel: {
     fontSize: 14,
-    color: '#2c3e50',
   },
   recentContainer: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     margin: 16,
@@ -284,14 +280,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 12,
-    color: '#2c3e50',
   },
   recentMoodItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ecf0f1',
   },
   recentMoodEmoji: {
     fontSize: 24,
@@ -303,12 +296,10 @@ const styles = StyleSheet.create({
   },
   recentMoodTask: {
     fontSize: 14,
-    color: '#34495e',
     marginBottom: 2,
   },
   recentMoodDate: {
     fontSize: 12,
-    color: '#7f8c8d',
   },
 });
 
