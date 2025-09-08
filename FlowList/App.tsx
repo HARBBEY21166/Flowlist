@@ -10,6 +10,7 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import { Ionicons } from '@expo/vector-icons';
 import { getColors } from './src/constants/Colors';
 
+
 const Tab = createBottomTabNavigator();
 
 // Create custom themes instead of using React Navigation's built-in themes
@@ -89,6 +90,7 @@ function TabNavigator() {
         component={AnalyticsScreen}
         options={{ title: 'Analytics' }}
       />
+     
       <Tab.Screen 
         name="Settings" 
         component={SettingsScreen}
