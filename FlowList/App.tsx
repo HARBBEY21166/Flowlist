@@ -73,28 +73,29 @@ function TabNavigator() {
           color: colors.text,
         },
         headerTintColor: colors.primary,
+        
       })}
     >
       <Tab.Screen 
         name="Home" 
         component={HomeScreen}
-        options={{ title: 'My Tasks' }}
+        options={{ headerShown: false }}
       />
       <Tab.Screen 
         name="Timer" 
         component={TimerScreen}
-        options={{ title: 'Focus Timer' }}
+        options={{ headerShown: false }}
       />
       <Tab.Screen 
         name="Analytics" 
         component={AnalyticsScreen}
-        options={{ title: 'Analytics' }}
+        options={{ headerShown: false }}
       />
      
       <Tab.Screen 
         name="Settings" 
         component={SettingsScreen}
-        options={{ title: 'Settings' }}
+        options={{ headerShown: false }}
       />
     </Tab.Navigator>
   );

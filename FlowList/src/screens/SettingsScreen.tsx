@@ -21,6 +21,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getColors } from '../constants/Colors';
 import { saveData, loadData } from '../utils/storage';
 import * as Notifications from 'expo-notifications';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Add the missing function
 const cancelScheduledNotifications = async (): Promise<void> => {
@@ -116,8 +117,9 @@ const SettingsScreen: React.FC = () => {
 
   return (
     <>
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.header, { color: colors.text }]}>Settings</Text>
+ <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>  
+  <ScrollView>     
+   <Text style={[styles.header, { color: colors.text }]}>Settings</Text>
         
         <View style={[styles.section, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Notifications</Text>
@@ -361,7 +363,8 @@ const SettingsScreen: React.FC = () => {
             </View>
           </View>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </SafeAreaView>
     </>
   );
 };

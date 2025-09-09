@@ -15,6 +15,7 @@ import EditTaskModal from './EditTaskModal';
 import { getColors } from '../constants/Colors';
 import { useTheme } from '../contexts/ThemeContext';
 
+
 interface TaskItemProps {
   task: Task;
 }

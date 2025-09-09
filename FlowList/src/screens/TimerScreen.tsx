@@ -10,7 +10,9 @@ import {
   ScrollView,
   TextInput,
   Modal,
-  Alert
+  Alert,
+  Animated,
+  Easing
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
 import { TimerState } from '../types';
@@ -19,6 +21,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { saveData, loadData } from '../utils/storage';
 import { getColors } from '../constants/Colors';
 import { useTheme } from '../contexts/ThemeContext';
+import ConfettiCannon from 'react-native-confetti-cannon';
+import MoodSelector from '../components/MoodSelector';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 // Define interfaces
 interface TimerDurations {
@@ -42,7 +48,7 @@ const DEFAULT_DURATIONS: TimerDurations = {
 const TimerScreen: React.FC = () => {
   const { isDark } = useTheme();
   const colors = getColors(isDark);
-  const { tasks, activeTaskId, setActiveTask } = useData();
+  const { tasks, activeTaskId, setActiveTask, updateTask } = useData();
   const [timeLeft, setTimeLeft] = useState(DEFAULT_DURATIONS.work * 60);
   const [timerState, setTimerState] = useState<TimerState>(TimerState.STOPPED);
   const [sessionCount, setSessionCount] = useState(0);
@@ -50,11 +56,30 @@ const TimerScreen: React.FC = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [durations, setDurations] = useState<TimerDurations>(DEFAULT_DURATIONS);
   const [longBreakInterval, setLongBreakInterval] = useState<number>(4);
+  
+  // Celebration states
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [showMoodSelector, setShowMoodSelector] = useState(false);
+  const [completedTaskId, setCompletedTaskId] = useState<string | null>(null);
+  const [pulseAnim] = useState(new Animated.Value(0));
+    const [scaleAnim] = useState(new Animated.Value(0));
+
 
   // Load saved settings
   useEffect(() => {
     loadTimerSettings();
   }, []);
+
+  // Animation for progress bar
+  const [progressAnim] = useState(new Animated.Value(0));
+
+  useEffect(() => {
+  Animated.timing(progressAnim, {
+    toValue: getProgress(),
+    duration: 1000,
+    useNativeDriver: false,
+  }).start();
+}, [timeLeft]);
 
   const loadTimerSettings = async (): Promise<void> => {
     try {
@@ -62,7 +87,6 @@ const TimerScreen: React.FC = () => {
       if (savedSettings) {
         setDurations(savedSettings.durations || DEFAULT_DURATIONS);
         setLongBreakInterval(savedSettings.longBreakInterval || 4);
-        // Update current time if timer is running
         if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
           setTimeLeft(getDuration(timerState, savedSettings.durations));
         }
@@ -82,7 +106,6 @@ const TimerScreen: React.FC = () => {
       Alert.alert('Success', 'Timer settings saved!');
       setShowSettings(false);
       
-      // Update current timer if needed
       if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
         setTimeLeft(getDuration(timerState, durations));
       }
@@ -90,6 +113,66 @@ const TimerScreen: React.FC = () => {
       console.error('Error saving timer settings:', error);
       Alert.alert('Error', 'Failed to save settings');
     }
+  };
+
+  // Celebration animation
+  const startCelebration = (): void => {
+    setShowCelebration(true);
+    
+    // Continuous pulse animation
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 0,
+          duration: 1000,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    Animated.sequence([
+    Animated.spring(scaleAnim, {
+      toValue: 1.2,
+      friction: 2,
+      tension: 140,
+      useNativeDriver: true,
+    }),
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      friction: 4,
+      tension: 100,
+      useNativeDriver: true,
+    }),
+  ]).start();
+
+  // Pulse background
+  Animated.loop(
+    Animated.sequence([
+      Animated.timing(pulseAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.timing(pulseAnim, {
+        toValue: 0.3,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+    ])
+  ).start();
+
+    // Auto-hide celebration after 5 seconds
+    setTimeout(() => {
+      setShowCelebration(false);
+      pulseAnim.stopAnimation();
+    }, 5000);
   };
 
   // Format time for display (MM:SS)
@@ -150,27 +233,26 @@ const TimerScreen: React.FC = () => {
     }
   }, [timeLeft, timerState]);
 
-
   // Timer effect - This is what makes the countdown work
-useEffect(() => {
-  let interval: NodeJS.Timeout | null = null;
-  
-  if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
-    interval = setInterval(() => {
-      setTimeLeft(prevTime => {
-        if (prevTime <= 1) {
-          clearInterval(interval as NodeJS.Timeout);
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-  }
-  
-  return () => {
-    if (interval) clearInterval(interval);
-  };
-}, [timerState]);
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    
+    if (timerState !== TimerState.STOPPED && timerState !== TimerState.PAUSED) {
+      interval = setInterval(() => {
+        setTimeLeft(prevTime => {
+          if (prevTime <= 1) {
+            clearInterval(interval as NodeJS.Timeout);
+            return 0;
+          }
+          return prevTime - 1;
+        });
+      }, 1000);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [timerState]);
 
   const handleTimerComplete = async (): Promise<void> => {
     Vibration.vibrate([0, 500, 200, 500]);
@@ -184,7 +266,23 @@ useEffect(() => {
       trigger: null,
     });
 
-    // Determine next timer state
+    // If it was a work session and there's an active task, complete it with celebration
+    if (timerState === TimerState.WORK && activeTaskId) {
+      const activeTask = tasks.find(task => task.id === activeTaskId);
+      if (activeTask && !activeTask.completed) {
+        setCompletedTaskId(activeTaskId);
+        startCelebration();
+        
+        // Show mood selector after a brief celebration
+        setTimeout(() => {
+          setShowMoodSelector(true);
+        }, 2000);
+        
+        return; // Stop here to wait for mood selection
+      }
+    }
+
+    // Determine next timer state for non-task completion
     let nextState: TimerState;
     if (timerState === TimerState.WORK) {
       const nextSessionCount = sessionCount + 1;
@@ -198,6 +296,38 @@ useEffect(() => {
 
     setTimerState(nextState);
     setTimeLeft(getDuration(nextState));
+  };
+
+  const handleMoodSelect = async (mood: { emoji: string; name: string; color: string }): Promise<void> => {
+    try {
+      if (completedTaskId) {
+        await updateTask(completedTaskId, { 
+          completed: true, 
+          completedAt: Date.now(), 
+          mood: mood.emoji 
+        });
+      }
+      
+      setShowMoodSelector(false);
+      setCompletedTaskId(null);
+      setShowCelebration(false);
+      pulseAnim.stopAnimation();
+      
+      // Continue to next timer state after mood selection
+      let nextState: TimerState;
+      const nextSessionCount = sessionCount + 1;
+      setSessionCount(nextSessionCount);
+      nextState = nextSessionCount % longBreakInterval === 0 
+        ? TimerState.LONG_BREAK 
+        : TimerState.SHORT_BREAK;
+
+      setTimerState(nextState);
+      setTimeLeft(getDuration(nextState));
+      
+    } catch (error) {
+      console.error('Error updating task mood:', error);
+      Alert.alert('Error', 'Failed to save mood');
+    }
   };
 
   const startTimer = (): void => {
@@ -219,6 +349,10 @@ useEffect(() => {
     setTimerState(TimerState.STOPPED);
     setTimeLeft(getDuration(TimerState.WORK));
     setSessionCount(0);
+    setShowCelebration(false);
+    setShowMoodSelector(false);
+    setCompletedTaskId(null);
+    pulseAnim.stopAnimation();
   };
 
   const skipTimer = (): void => {
@@ -242,8 +376,23 @@ useEffect(() => {
     return (totalTime - timeLeft) / totalTime;
   };
 
+  const pulseOpacity = pulseAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.3, 0.7]
+  });
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+ <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+        {/* Confetti Celebration */}
+      {showCelebration && (
+        <ConfettiCannon
+          count={200}
+          origin={{ x: -10, y: 0 }}
+          autoStart={true}
+          fadeOut={true}
+        />
+      )}
+
       <View style={styles.content}>
         {/* Settings Button */}
         <TouchableOpacity 
@@ -253,18 +402,31 @@ useEffect(() => {
           <Ionicons name="settings" size={24} color="white" />
         </TouchableOpacity>
 
+        {/* Celebration Message */}
+        {showCelebration && (
+          <Animated.View style={[styles.celebrationContainer, { opacity: pulseOpacity }]}>
+            <Text style={styles.celebrationText}>🎉 Task Completed! 🎉</Text>
+            <Text style={styles.celebrationSubtext}>How did that feel?</Text>
+          </Animated.View>
+        )}
+
         <Text style={[styles.stateText, { color: colors.text }]}>{getTimerStateText()}</Text>
         
         <View style={[styles.timerCircle, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
           <Text style={[styles.timerText, { color: colors.text }]}>{formatTime(timeLeft)}</Text>
-          <View style={[styles.progressBar, { backgroundColor: colors.border, marginTop: 20 }]}>
-            <View 
-              style={[
-                styles.progressFill,
-                { width: `${getProgress() * 100}%` }
-              ]} 
-            />
-          </View>
+         <View style={styles.progressBar}>
+  <Animated.View 
+    style={[
+      styles.progressFill,
+      { 
+        width: progressAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: ['0%', '100%']
+        })
+      }
+    ]} 
+  />
+</View>
         </View>
 
         <View style={styles.sessionInfo}>
@@ -338,6 +500,29 @@ useEffect(() => {
           </ScrollView>
         </View>
       </View>
+
+      {/* Mood Selector Modal */}
+      <MoodSelector
+        visible={showMoodSelector}
+        onMoodSelect={handleMoodSelect}
+        onClose={() => {
+          setShowMoodSelector(false);
+          setCompletedTaskId(null);
+          setShowCelebration(false);
+          pulseAnim.stopAnimation();
+          // Continue with normal timer flow if user closes without selecting mood
+          if (timerState === TimerState.WORK) {
+            const nextSessionCount = sessionCount + 1;
+            setSessionCount(nextSessionCount);
+            const nextState = nextSessionCount % longBreakInterval === 0 
+              ? TimerState.LONG_BREAK 
+              : TimerState.SHORT_BREAK;
+            setTimerState(nextState);
+            setTimeLeft(getDuration(nextState));
+          }
+        }}
+        selectedMood={null}
+      />
 
       {/* Timer Settings Modal */}
       <Modal
@@ -450,11 +635,13 @@ useEffect(() => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 
+// Add these new styles to your existing StyleSheet
 const styles = StyleSheet.create({
+  // ... (keep all your existing styles) ...
   container: {
     flex: 1,
   },
@@ -639,6 +826,26 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
+  celebrationContainer: {
+    position: 'absolute',
+    top: 80,
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    zIndex: 1000,
+  },
+  celebrationText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2c3e50',
+    marginBottom: 4,
+  },
+  celebrationSubtext: {
+    fontSize: 16,
+    color: '#7f8c8d',
+  },
+  // ... (rest of your existing styles) ...
 });
 
 export default TimerScreen;

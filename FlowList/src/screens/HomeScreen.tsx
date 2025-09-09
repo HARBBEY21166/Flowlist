@@ -16,6 +16,8 @@ import { PRIORITIES } from '../utils/constants';
 import { Task } from '../types';
 import { getColors } from '../constants/Colors';
 import { useTheme } from '../contexts/ThemeContext';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 
 const HomeScreen: React.FC = () => {
   const { isDark } = useTheme();
@@ -49,7 +51,8 @@ const HomeScreen: React.FC = () => {
   const renderTask = ({ item }: { item: Task }) => <TaskItem task={item} />;
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
+      <ScrollView>
       <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
         <Text style={[styles.title, { color: colors.text }]}>My Tasks</Text>
         <TouchableOpacity
@@ -151,7 +154,8 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

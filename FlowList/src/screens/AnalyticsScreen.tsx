@@ -15,6 +15,8 @@ import { MOODS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { getColors } from '../constants/Colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
 import { 
   calculateProductivityStats, 
   calculateMoodStats, 
@@ -102,9 +104,8 @@ const AnalyticsScreen: React.FC = () => {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.header, { color: colors.text }]}>Productivity Analytics</Text>
-
+ <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>      <Text style={[styles.header, { color: colors.text }]}>Productivity Analytics</Text>
+<ScrollView>
       {/* Summary Cards */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.summaryScroll}>
         <View style={styles.summaryContainer}>
@@ -259,7 +260,8 @@ const AnalyticsScreen: React.FC = () => {
           </View>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
