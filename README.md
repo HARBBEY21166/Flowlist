@@ -24,7 +24,7 @@ eas submit --platform android
 
 9cb58626-232d-4294-8736-724b60a06407
 
-npx expo start --tunnel
+
 
 
 Implementing the Pomodoro timer functionality

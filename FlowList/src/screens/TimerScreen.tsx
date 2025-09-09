@@ -243,21 +243,21 @@ useEffect(() => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: getBackgroundColor() }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         {/* Settings Button */}
         <TouchableOpacity 
-          style={[styles.settingsButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}
+          style={[styles.settingsButton, { backgroundColor: colors.primary }]}
           onPress={() => setShowSettings(true)}
         >
           <Ionicons name="settings" size={24} color="white" />
         </TouchableOpacity>
 
-        <Text style={styles.stateText}>{getTimerStateText()}</Text>
+        <Text style={[styles.stateText, { color: colors.text }]}>{getTimerStateText()}</Text>
         
-        <View style={[styles.timerCircle, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
-          <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-          <View style={styles.progressBar}>
+        <View style={[styles.timerCircle, { backgroundColor: colors.cardBackground, borderColor: colors.border }]}>
+          <Text style={[styles.timerText, { color: colors.text }]}>{formatTime(timeLeft)}</Text>
+          <View style={[styles.progressBar, { backgroundColor: colors.border, marginTop: 20 }]}>
             <View 
               style={[
                 styles.progressFill,
@@ -268,10 +268,10 @@ useEffect(() => {
         </View>
 
         <View style={styles.sessionInfo}>
-          <Text style={styles.sessionText}>
+          <Text style={[styles.sessionText, { color: colors.text }]}>
             Session: {sessionCount % longBreakInterval}/{longBreakInterval}
           </Text>
-          <Text style={styles.sessionText}>
+          <Text style={[styles.sessionText, { color: colors.text }]}>
             Next: {sessionCount % longBreakInterval === longBreakInterval - 1 
               ? 'Long Break' 
               : 'Short Break'}
@@ -280,23 +280,23 @@ useEffect(() => {
 
         <View style={styles.controls}>
           {(timerState === TimerState.PAUSED || timerState === TimerState.STOPPED) ? (
-            <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={startTimer}>
+            <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.primary, borderColor: colors.border }]} onPress={startTimer}>
               <Ionicons name="play" size={24} color="white" />
               <Text style={styles.controlText}>Start</Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={pauseTimer}>
+            <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.primary, borderColor: colors.border }]} onPress={pauseTimer}>
               <Ionicons name="pause" size={24} color="white" />
               <Text style={styles.controlText}>Pause</Text>
             </TouchableOpacity>
           )}
           
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={resetTimer}>
+          <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.primary, borderColor: colors.border }]} onPress={resetTimer}>
             <Ionicons name="refresh" size={24} color="white" />
             <Text style={styles.controlText}>Reset</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.controlButton, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]} onPress={skipTimer}>
+          <TouchableOpacity style={[styles.controlButton, { backgroundColor: colors.primary, borderColor: colors.border }]} onPress={skipTimer}>
             <Ionicons name="play-skip-forward" size={24} color="white" />
             <Text style={styles.controlText}>Skip</Text>
           </TouchableOpacity>
@@ -484,6 +484,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 30,
+     borderWidth: 5,
+    shadowColor: '#ffffff',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 12,
   },
   timerText: {
     fontSize: 48,
@@ -493,14 +499,13 @@ const styles = StyleSheet.create({
   progressBar: {
     width: '80%',
     height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'text',
     borderRadius: 3,
-    marginTop: 20,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: 'white',
+    backgroundColor: '#4361ee',
     borderRadius: 3,
   },
   sessionInfo: {
@@ -510,7 +515,6 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   sessionText: {
-    color: 'white',
     fontSize: 16,
   },
   controls: {
@@ -579,7 +583,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     flex: 1,
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
   modalHeader: {
     flexDirection: 'row',
