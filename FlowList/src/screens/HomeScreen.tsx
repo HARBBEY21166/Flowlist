@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Modal,
-  ScrollView,
+  
   Alert
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
@@ -52,27 +52,25 @@ const HomeScreen: React.FC = () => {
 
   return (
      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <ScrollView>
-      <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
-        <Text style={[styles.title, { color: colors.text }]}>My Tasks</Text>
-        <TouchableOpacity
-          style={[styles.addButton, { backgroundColor: colors.primary }]}
-          onPress={() => setModalVisible(true)}
-        >
-          <Text style={styles.addButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-
       <FlatList
         data={tasks.filter(task => !task.completed)}
         renderItem={renderTask}
         keyExtractor={item => item.id}
-        contentContainerStyle={tasks.length === 0 && { flex: 1, justifyContent: 'center' }}
+        contentContainerStyle={tasks.length === 0 ? { flex: 1, justifyContent: 'center' } : undefined}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-              No tasks yet. Add one to get started!
-            </Text>
+            <Text style={[styles.emptyText, { color: colors.textSecondary }]}>No tasks yet. Add one to get started!</Text>
+          </View>
+        }
+        ListHeaderComponent={
+          <View style={[styles.header, { backgroundColor: colors.cardBackground, borderBottomColor: colors.border }]}>
+            <Text style={[styles.title, { color: colors.text }]}>My Tasks</Text>
+            <TouchableOpacity
+              style={[styles.addButton, { backgroundColor: colors.primary }]}
+              onPress={() => setModalVisible(true)}
+            >
+              <Text style={styles.addButtonText}>+</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -84,29 +82,29 @@ const HomeScreen: React.FC = () => {
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
-          <View style={[styles.modalContent, { 
-            backgroundColor: colors.cardBackground, 
-            borderColor: colors.border 
+          <View style={[styles.modalContent, {
+            backgroundColor: colors.cardBackground,
+            borderColor: colors.border
           }]}>
             <Text style={[styles.modalTitle, { color: colors.text }]}>Add New Task</Text>
-            
+
             <TextInput
-              style={[styles.input, { 
-                color: colors.text, 
+              style={[styles.input, {
+                color: colors.text,
                 backgroundColor: colors.background,
-                borderColor: colors.border 
+                borderColor: colors.border
               }]}
               placeholder="Task title"
               placeholderTextColor={colors.textSecondary}
               value={newTask.title}
               onChangeText={text => setNewTask({...newTask, title: text})}
             />
-            
+
             <TextInput
-              style={[styles.input, styles.textArea, { 
-                color: colors.text, 
+              style={[styles.input, styles.textArea, {
+                color: colors.text,
                 backgroundColor: colors.background,
-                borderColor: colors.border 
+                borderColor: colors.border
               }]}
               placeholder="Description (optional)"
               placeholderTextColor={colors.textSecondary}
@@ -114,23 +112,23 @@ const HomeScreen: React.FC = () => {
               value={newTask.description}
               onChangeText={text => setNewTask({...newTask, description: text})}
             />
-            
+
             <Text style={[styles.label, { color: colors.text }]}>Priority:</Text>
             <View style={styles.priorityContainer}>
               {Object.entries(PRIORITIES).map(([key, value]) => (
                 <TouchableOpacity
                   key={key}
                   style={[
-                    styles.priorityButton, 
-                    newTask.priority === key.toLowerCase() && 
+                    styles.priorityButton,
+                    newTask.priority === key.toLowerCase() &&
                     { backgroundColor: value.color }
                   ]}
                   onPress={() => setNewTask({
-                    ...newTask, 
+                    ...newTask,
                     priority: key.toLowerCase() as 'low' | 'medium' | 'high'
                   })}
                 >
-                  <Text style={[styles.priorityText, { color: colors.text }]}>
+                  <Text style={[styles.priorityText, { color: colors.text }]}> 
                     {value.label}
                   </Text>
                 </TouchableOpacity>
@@ -138,13 +136,13 @@ const HomeScreen: React.FC = () => {
             </View>
 
             <View style={styles.buttonRow}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.cancelButton, { backgroundColor: colors.border }]}
                 onPress={() => setModalVisible(false)}
               >
                 <Text style={[styles.buttonText, { color: colors.text }]}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.button, styles.addTaskButton, { backgroundColor: colors.primary }]}
                 onPress={handleAddTask}
               >
@@ -154,7 +152,6 @@ const HomeScreen: React.FC = () => {
           </View>
         </View>
       </Modal>
-      </ScrollView>
     </SafeAreaView>
   );
 };
