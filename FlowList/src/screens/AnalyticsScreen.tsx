@@ -10,7 +10,7 @@ import {
   Dimensions 
 } from 'react-native';
 import { useData } from '../contexts/DataContext';
-import { Mood } from '../types';
+import { Mood, Task } from '../types';
 import { MOODS } from '../utils/constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
@@ -28,7 +28,19 @@ import {
 const { width } = Dimensions.get('window');
 
 const AnalyticsScreen: React.FC = () => {
-  const { tasks } = useData();
+  let tasks: Task[] = [];
+  try {
+    const dataCtx = useData();
+    tasks = dataCtx.tasks || [];
+  } catch (err) {
+    // If the context is not available (unexpected), avoid crashing the screen.
+    // Log the error and fall back to an empty tasks array so the UI can render a helpful message.
+    // This should not happen when `DataProvider` is correctly mounted — keeping this defensive
+    // avoids an app-wide crash while we investigate why the context wasn't available.
+    // eslint-disable-next-line no-console
+    console.warn('useData() unavailable in AnalyticsScreen:', err);
+    tasks = [];
+  }
   const { isDark } = useTheme();
   const colors = getColors(isDark);
   const [exporting, setExporting] = useState(false);
