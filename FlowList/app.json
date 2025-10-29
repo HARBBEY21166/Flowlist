@@ -4,7 +4,7 @@
     "slug": "flowlist",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.jpg",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -35,6 +35,9 @@
         "projectId": "fd473eed-6124-4b30-ab10-31c92df3abcd"
       }
     },
-    "owner": "abbeybear"
+    "owner": "abbeybear",
+    "plugins": [
+      "expo-font"
+    ]
   }
 }
