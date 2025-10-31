@@ -1,0 +1,6 @@
+# Repo-level ignores for nested FlowList project
+# Ignore local Expo state for the FlowList project
+FlowList/.expo/
+
+# Optional: ignore the FlowList node_modules if you frequently run installs at the nested level
+FlowList/node_modules/

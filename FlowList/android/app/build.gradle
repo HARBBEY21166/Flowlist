@@ -2,6 +2,11 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// Ensure new architecture flag is visible to all Gradle projects/subprojects.
+// Some environments/readers may not surface gradle.properties to the reanimated subproject,
+// so set the property explicitly here to satisfy react-native-reanimated's check.
+ext.newArchEnabled = "true"
+
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 /**
